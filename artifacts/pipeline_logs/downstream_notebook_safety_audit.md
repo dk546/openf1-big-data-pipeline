@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-19  
 **Scope:** Notebooks 03–05, shared utilities, DuckDB validation, fallback behavior  
-**Related:** [spark_silver_starting_grid_fix.md](./spark_silver_starting_grid_fix.md)
+**Related:** [spark_silver_starting_grid_fix.md](./spark_silver_starting_grid_fix.md), [spark_silver_duplicate_report_fix.md](./spark_silver_duplicate_report_fix.md)
 
 ---
 
@@ -173,3 +173,4 @@ Same `OPENF1_DATA_ROOT` in every notebook.
 - Smoke modeling metrics are wiring-only, not MBA evidence (`evidence_tier=smoke_wiring_only`)
 - Mixed Spark-dir/pandas-file artifacts from **pre-fix** runs outside notebook cleanup paths may need one-time manual deletion
 - Bronze pandas fallback still possible if explicitly enabled — lower risk (CSV outputs only)
+- **Follow-up (2026-05-19):** pandas duplicate reports on lap segment ndarray columns — fixed in `quality/profiling.py` / `duplicates.py` ([spark_silver_duplicate_report_fix.md](./spark_silver_duplicate_report_fix.md))

@@ -533,6 +533,8 @@ def run_silver_cleaning_spark(
     )
 
     # Pandas report helpers at report boundary (RI, outliers, temporal) — cleaning was Spark
+    # TODO: For full-season runs, prefer Spark-native key-duplicate counts on large tables
+    # (laps/position); pandas full-row checks here are acceptable for smoke-sized samples.
     bronze_pandas = {
         ep: (
             bronze_spark[ep].toPandas()
