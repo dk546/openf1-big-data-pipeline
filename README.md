@@ -27,7 +27,7 @@ This work is submitted for an **MBA Big Data Infrastructures** resit. Grading em
 3. **Feature Engineering & Integration**
 4. **Experimental Results & Analysis**
 
-See `project_context.md` and `project_plan.md` for full requirements and artifact lists.
+See local project planning docs (if available in your clone) for full requirements and artifact lists.
 
 ---
 
@@ -85,7 +85,7 @@ Raw payloads: `data/bronze/{endpoint}/…/*.jsonl` (typically on Google Drive vi
 | Version control | **GitHub** |
 | Execution | **Google Colab Pro Plus** |
 
-**No local execution is required.** Paths assume a cloned repo in Colab; large datasets should live on **Google Drive** (see notebook `00_colab_setup.ipynb`).
+**No local execution is required.** Paths assume a cloned repo in Colab; large datasets should live on **Google Drive** (see `notebooks/00_colab_setup.ipynb` and the standard setup cell in each pipeline notebook).
 
 ---
 
@@ -123,37 +123,60 @@ Features must respect a documented **decision-time cutoff** (no label leakage). 
 
 ---
 
-## 9. Expected execution workflow
+## 9. Google Colab execution (official)
 
-1. Open **Google Colab Pro Plus**.
-2. **Clone** this repository (or pull latest from GitHub) to `/content/openf1-big-data-pipeline`.
-3. Run `notebooks/00_colab_setup.ipynb`:
-   - Install dependencies from `requirements.txt`
-   - Set `USE_GOOGLE_DRIVE=True` (recommended)
-   - Mount Drive and set `OPENF1_DATA_ROOT=/content/drive/MyDrive/openf1_big_data_pipeline`
-   - Verify imports and resolved paths
-4. Run notebooks **in order** (use the **same** `USE_GOOGLE_DRIVE` setting in each):
-   - `01_ingestion_bronze.ipynb`
-   - `02_silver_cleaning_quality.ipynb`
-   - `03_gold_feature_engineering.ipynb`
-   - `04_modeling_evaluation.ipynb`
-   - `05_report_artifacts.ipynb`
-5. Save outputs under Drive `data/`, `reports/`, and `artifacts/` when using persistence.
-6. Commit **code and lightweight reports** to GitHub; keep bulk `data/` on Drive.
+**Repository:** https://github.com/dk546/openf1-big-data-pipeline
 
-### Recommended Colab persistence setup
+### Why each notebook has its own setup cell
+
+Colab **notebook tabs do not share runtime state**. Opening `01` or `02` in a new tab starts a fresh kernel — variables, mounts, and `sys.path` from `00` are **not** available. Every execution notebook (`00`, `01`, `02`, …) therefore includes the **same standard setup cell** at the top.
+
+### Recommended persistence setup
 
 | Location | Purpose |
 |----------|---------|
-| `/content/openf1-big-data-pipeline` | GitHub repo — **source code and notebooks** |
+| `/content/openf1-big-data-pipeline` | GitHub clone — **source code and notebooks** |
 | `/content/drive/MyDrive/openf1_big_data_pipeline` | **Generated outputs** when `USE_GOOGLE_DRIVE=True` |
 
-- Set `USE_GOOGLE_DRIVE=True` in `00`, `01`, and `02` notebooks.
-- The environment variable `OPENF1_DATA_ROOT` must be set **before** importing `openf1_pipeline.config`.
-- On Drive you get: `data/`, `reports/`, `artifacts/` (Bronze JSONL, Silver Parquet, manifests, DQ CSVs).
-- This protects Bronze and Silver artifacts from Colab runtime resets.
-- For the final MBA report, cite **Drive-generated outputs** from the full Colab run.
-- Lightweight selected CSV summaries can later be copied into the repo if needed for GitHub evidence.
+Set `USE_GOOGLE_DRIVE=True` in each notebook. The setup cell will:
+
+1. Mount Google Drive (if enabled)
+2. Set `OPENF1_DATA_ROOT=/content/drive/MyDrive/openf1_big_data_pipeline`
+3. Clone or `git pull` the repo into `/content/openf1-big-data-pipeline`
+4. Run `pip install -r requirements.txt`
+5. Run `pip install -e .` (requires `pyproject.toml`)
+6. Add `src/` to `sys.path` as fallback
+7. Import `openf1_pipeline` and print resolved paths
+
+**Important:** `OPENF1_DATA_ROOT` is set **before** importing `openf1_pipeline.config`.
+
+### Run order
+
+1. `notebooks/00_colab_setup.ipynb` — validate environment (optional but recommended first time)
+2. `notebooks/01_ingestion_bronze.ipynb` with `SMOKE_TEST=True`, `MAX_SESSIONS=2`
+3. `notebooks/02_silver_cleaning_quality.ipynb` on smoke Bronze outputs
+4. Re-run `01` with `SMOKE_TEST=False` for full seasons 2023–2025 (Drive **required** — long run)
+5. Re-run `02` on full Bronze
+6. `03` → `05` when implemented
+
+### Packaging
+
+```bash
+pip install -r requirements.txt
+pip install -e .
+```
+
+Runtime dependencies live in `requirements.txt`. `pyproject.toml` defines the installable `src/openf1_pipeline` package only.
+
+### Before Gold / modeling
+
+Confirm `session_result` has non-zero rows in the ingestion manifest and Bronze inventory. Silver must produce `session_result_clean.parquet` with rows before building the Gold target `points_finish`.
+
+### After Colab runs
+
+- Bulk `data/` stays on **Drive** (gitignored).
+- Commit **code** and lightweight **CSV summaries** to GitHub when appropriate.
+- For the MBA report, cite **Drive-generated outputs** from the full Colab run.
 
 ---
 
@@ -161,17 +184,18 @@ Features must respect a documented **decision-time cutoff** (no label leakage). 
 
 ```
 openf1-big-data-pipeline/
-├── project_context.md          # Project memory
-├── project_plan.md             # Implementation plan
-├── implementation_checklist.md # Living checklist
 ├── README.md
+├── pyproject.toml                # Editable package (pip install -e .)
 ├── requirements.txt
-├── notebooks/                  # Colab notebooks (run in order)
-├── src/openf1_pipeline/        # Pipeline Python package
+├── notebooks/                    # Colab notebooks (each has setup cell)
+├── scripts/                      # colab_bootstrap.py, rebuild_colab_notebooks.py
+├── src/openf1_pipeline/          # Pipeline Python package
 ├── data/                         # bronze | silver | gold (gitignored bulk)
 ├── reports/                      # data_quality | model_results | figures | tables
 └── artifacts/                    # manifests | schemas | feature_definitions | logs
 ```
+
+On Colab with Drive: outputs live under `/content/drive/MyDrive/openf1_big_data_pipeline/`, not inside the repo clone.
 
 ---
 

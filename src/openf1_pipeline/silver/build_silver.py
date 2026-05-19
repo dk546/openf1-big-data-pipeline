@@ -154,7 +154,7 @@ def run_silver_cleaning(
     if not bronze_dir.is_dir() or not any(bronze_dir.iterdir()):
         raise FileNotFoundError(
             f"Bronze data not found at {bronze_dir}. "
-            "Run 01_ingestion_bronze.ipynb first with the same OPENF1_DATA_ROOT setting."
+            "Run 01_ingestion_bronze.ipynb first with the same USE_GOOGLE_DRIVE setting."
         )
 
     bronze_tables = load_bronze_tables(bronze_dir)

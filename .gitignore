@@ -86,5 +86,10 @@ derby.log
 /content/tmp/
 .sample_data/
 
+# Editable install / build (Colab and local)
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
 # Optional: ignore very large figures (keep report CSVs and small PNGs)
 # reports/figures/*.html

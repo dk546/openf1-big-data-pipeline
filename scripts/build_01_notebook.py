@@ -1,4 +1,7 @@
-"""Generate notebooks/01_ingestion_bronze.ipynb."""
+"""Generate notebooks/01_ingestion_bronze.ipynb.
+
+DEPRECATED: use scripts/rebuild_colab_notebooks.py for the standardized Colab setup pattern.
+"""
 
 import json
 from pathlib import Path

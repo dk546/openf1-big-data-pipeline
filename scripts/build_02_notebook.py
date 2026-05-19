@@ -1,4 +1,7 @@
-"""Generate notebooks/02_silver_cleaning_quality.ipynb."""
+"""Generate notebooks/02_silver_cleaning_quality.ipynb.
+
+DEPRECATED: use scripts/rebuild_colab_notebooks.py for the standardized Colab setup pattern.
+"""
 
 import json
 from pathlib import Path

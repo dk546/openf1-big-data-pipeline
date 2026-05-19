@@ -62,7 +62,7 @@ SESSION_LEVEL_ENDPOINTS = SESSION_ENDPOINTS
 RACE_SESSION_NAMES = ("Race",)
 OPTIONAL_SESSION_NAMES = ("Sprint",)
 
-MARKER_FILES = ("project_context.md", "README.md")
+MARKER_FILES = ("README.md",)
 
 
 def get_project_root() -> Path:
