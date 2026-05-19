@@ -151,6 +151,12 @@ def run_silver_cleaning(
     ensure_dir(silver_dir)
     ensure_dir(data_quality_reports_dir)
 
+    if not bronze_dir.is_dir() or not any(bronze_dir.iterdir()):
+        raise FileNotFoundError(
+            f"Bronze data not found at {bronze_dir}. "
+            "Run 01_ingestion_bronze.ipynb first with the same OPENF1_DATA_ROOT setting."
+        )
+
     bronze_tables = load_bronze_tables(bronze_dir)
 
     # Pre-cleaning audits

@@ -69,7 +69,7 @@ Bronze ingestion (`01_ingestion_bronze.ipynb`) must be executed in **Google Cola
 | Schema report | `reports/data_quality/bronze_schema_report.csv` |
 | Schema drift | `reports/data_quality/bronze_schema_drift.csv` |
 
-Raw payloads: `data/bronze/{endpoint}/…/*.jsonl` (typically on Google Drive via `DATA_ROOT`).
+Raw payloads: `data/bronze/{endpoint}/…/*.jsonl` (typically on Google Drive via `OPENF1_DATA_ROOT`).
 
 **`session_result`** is included in Bronze because it provides final race classification positions used to construct the Gold target **`points_finish`** (top 10 classified = points finish).
 
@@ -126,19 +126,34 @@ Features must respect a documented **decision-time cutoff** (no label leakage). 
 ## 9. Expected execution workflow
 
 1. Open **Google Colab Pro Plus**.
-2. **Clone** this repository (or pull latest from GitHub).
+2. **Clone** this repository (or pull latest from GitHub) to `/content/openf1-big-data-pipeline`.
 3. Run `notebooks/00_colab_setup.ipynb`:
    - Install dependencies from `requirements.txt`
-   - Optionally mount **Google Drive** and set `DATA_ROOT`
-   - Verify imports and paths
-4. Run notebooks **in order**:
+   - Set `USE_GOOGLE_DRIVE=True` (recommended)
+   - Mount Drive and set `OPENF1_DATA_ROOT=/content/drive/MyDrive/openf1_big_data_pipeline`
+   - Verify imports and resolved paths
+4. Run notebooks **in order** (use the **same** `USE_GOOGLE_DRIVE` setting in each):
    - `01_ingestion_bronze.ipynb`
    - `02_silver_cleaning_quality.ipynb`
    - `03_gold_feature_engineering.ipynb`
    - `04_modeling_evaluation.ipynb`
    - `05_report_artifacts.ipynb`
-5. Save outputs under `reports/` and `artifacts/` (CSVs, figures, manifests).
+5. Save outputs under Drive `data/`, `reports/`, and `artifacts/` when using persistence.
 6. Commit **code and lightweight reports** to GitHub; keep bulk `data/` on Drive.
+
+### Recommended Colab persistence setup
+
+| Location | Purpose |
+|----------|---------|
+| `/content/openf1-big-data-pipeline` | GitHub repo — **source code and notebooks** |
+| `/content/drive/MyDrive/openf1_big_data_pipeline` | **Generated outputs** when `USE_GOOGLE_DRIVE=True` |
+
+- Set `USE_GOOGLE_DRIVE=True` in `00`, `01`, and `02` notebooks.
+- The environment variable `OPENF1_DATA_ROOT` must be set **before** importing `openf1_pipeline.config`.
+- On Drive you get: `data/`, `reports/`, `artifacts/` (Bronze JSONL, Silver Parquet, manifests, DQ CSVs).
+- This protects Bronze and Silver artifacts from Colab runtime resets.
+- For the final MBA report, cite **Drive-generated outputs** from the full Colab run.
+- Lightweight selected CSV summaries can later be copied into the repo if needed for GitHub evidence.
 
 ---
 
