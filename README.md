@@ -68,12 +68,37 @@ Bronze ingestion (`01_ingestion_bronze.ipynb`) should be executed in **Google Co
 | Row counts | `reports/data_quality/bronze_row_counts.csv` |
 | Schema report | `reports/data_quality/bronze_schema_report.csv` |
 | Schema drift | `reports/data_quality/bronze_schema_drift.csv` |
+| Manifest ↔ files reconciliation | `reports/data_quality/bronze_manifest_file_reconciliation.csv` |
+| Reconciliation summary | `reports/data_quality/bronze_manifest_file_reconciliation_summary.csv` |
+
+`bronze_manifest_file_reconciliation.csv` joins `ingestion_manifest.csv` to the JSONL inventory on disk and classifies every `(endpoint, year, session_key)` triple into `matched`, `row_count_mismatch`, `manifest_success_missing_file`, `failed_manifest_file_exists`, `stale_file_not_in_success_manifest`, `optional_missing`, or `manifest_failed_no_file`. It is used to verify that the manifest and the physical Bronze files agree **before** Silver processing — notably to detect stale files left behind when `CLEAR_BRONZE_OUTPUTS=False` was used over a non-empty Drive root.
 
 Raw payloads: `data/bronze/{endpoint}/…/*.jsonl` (typically on Google Drive via `OPENF1_DATA_ROOT`).
 
 **`session_result`** is included in Bronze because it provides race classification and points used to construct the Gold target **`points_finish`** (`1` if `points` > 0, else `0`).
 
 **`starting_grid`** is optional (may be empty on smoke). The planned **heuristic baseline** uses **`first_observed_position` ≤ 10** from Gold early-position features, not grid position.
+
+### Optional: targeted Bronze retry for failed session endpoints
+
+Full Bronze runs occasionally leave behind failed session-level rows in the manifest (most commonly HTTP 429 from the OpenF1 API). To recover those sessions without re-running the entire 2023–2025 ingestion, notebook `01_ingestion_bronze.ipynb` exposes an **optional targeted retry** at the bottom:
+
+```python
+RUN_TARGETED_RETRY    = False   # set True to actually run the retry
+RETRY_SLEEP_SECONDS   = 3.0     # slower throttling to avoid another 429 storm
+RETRY_INCLUDE_OPTIONAL = False  # set True to also retry starting_grid
+RETRY_ENDPOINTS       = None    # e.g. ["session_result", "pit"]; None = all required
+DELETE_STALE_SMOKE_FILES = False
+```
+
+Behaviour:
+
+- Reads `artifacts/manifests/ingestion_manifest.csv`, picks rows where `status != success` for required **session-level** endpoints (`drivers`, `laps`, `pit`, `weather`, `position`, `race_control`, `session_result`), and retries only those (endpoint, session_key) pairs with a throttled `OpenF1Client` (default 3 s base sleep).
+- `starting_grid` is excluded by default. Global endpoints (`meetings`, `sessions`) are never retried by this utility.
+- Overwrites/creates only the corresponding `data/bronze/{endpoint}/year={year}/session_key={session_key}.jsonl` files on Drive.
+- The original `ingestion_manifest.csv` is preserved unchanged. Retry results are written to `artifacts/manifests/ingestion_retry_manifest.csv`.
+- After retry, the notebook regenerates `bronze_file_inventory.csv`, `bronze_row_counts.csv`, `bronze_schema_report.csv`, `bronze_schema_drift.csv`, the `artifacts/schemas/bronze_schema_report.csv` schema snapshot, the `bronze_manifest_file_reconciliation*.csv` reports, and the `duckdb_bronze_*` validation CSVs so the on-disk Bronze evidence reflects the new files.
+- Programmatic API: `openf1_pipeline.ingestion.ingest.retry_failed_session_endpoints(...)`. See `artifacts/pipeline_logs/full_bronze_retry_plan.md` for the full workflow and `artifacts/pipeline_logs/bronze_manifest_file_reconciliation_added.md` for the reconciliation contract.
 
 ---
 

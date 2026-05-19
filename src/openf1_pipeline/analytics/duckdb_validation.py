@@ -188,6 +188,38 @@ def validate_bronze_with_duckdb(
             """
         ).df()
 
+    recon_path = dq / "bronze_manifest_file_reconciliation.csv"
+    if recon_path.exists():
+        con.execute(
+            f"CREATE OR REPLACE VIEW bronze_reconciliation AS "
+            f"SELECT * FROM read_csv_auto('{recon_path.as_posix()}')"
+        )
+        reports["bronze_manifest_file_reconciliation_summary"] = con.execute(
+            """
+            SELECT reconciliation_status, COUNT(*) AS row_count
+            FROM bronze_reconciliation
+            GROUP BY reconciliation_status
+            ORDER BY row_count DESC
+            """
+        ).df()
+        reports["bronze_manifest_file_reconciliation_by_endpoint"] = con.execute(
+            """
+            SELECT endpoint, reconciliation_status, COUNT(*) AS row_count
+            FROM bronze_reconciliation
+            GROUP BY endpoint, reconciliation_status
+            ORDER BY endpoint, reconciliation_status
+            """
+        ).df()
+        # Surface any non-matched rows for quick triage in the notebook.
+        reports["bronze_manifest_file_reconciliation_issues"] = con.execute(
+            """
+            SELECT *
+            FROM bronze_reconciliation
+            WHERE reconciliation_status NOT IN ('matched', 'optional_missing')
+            ORDER BY reconciliation_status, endpoint, year, session_key
+            """
+        ).df()
+
     con.close()
     return reports
 

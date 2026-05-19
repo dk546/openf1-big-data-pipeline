@@ -266,6 +266,93 @@ manifest_df.groupby(["endpoint", "status"]).size().unstack(fill_value=0)"""),
     allow_fallback=ALLOW_FALLBACK,
 )
 report_result"""),
+        md("""## Manifest ↔ Bronze files reconciliation
+
+Cross-checks `artifacts/manifests/ingestion_manifest.csv` against the JSONL inventory on disk.
+Produces:
+
+- `reports/data_quality/bronze_manifest_file_reconciliation.csv`
+- `reports/data_quality/bronze_manifest_file_reconciliation_summary.csv`
+
+This is the canonical place to detect stale files (e.g. smoke leftovers), row-count drift,
+manifest-success-but-file-missing, and failed-but-file-present states **before** Silver runs.
+"""),
+        code("""from openf1_pipeline.bronze.build_bronze import (
+    generate_bronze_reconciliation_reports,
+)
+
+reconciliation = generate_bronze_reconciliation_reports(
+    manifest_path=get_manifests_dir() / "ingestion_manifest.csv",
+    bronze_dir=get_bronze_dir(),
+    data_quality_reports_dir=get_data_quality_reports_dir(),
+    row_counts_df=pd.read_csv(report_result["paths"]["bronze_row_counts"]),
+)
+reconciliation_df = reconciliation["df"]
+reconciliation_totals = reconciliation["summary"]
+
+print("Reconciliation totals:")
+for k, v in reconciliation_totals.items():
+    print(f"  {k}: {v}")
+
+display(
+    reconciliation_df.groupby("reconciliation_status").size().reset_index(name="count")
+)
+
+non_matched = reconciliation_df[
+    reconciliation_df["reconciliation_status"] != "matched"
+]
+if not non_matched.empty:
+    print(f"\\nNon-matched rows: {len(non_matched)}")
+    display(non_matched.head(40))
+
+stale = reconciliation_df[
+    reconciliation_df["reconciliation_status"] == "stale_file_not_in_success_manifest"
+]
+failed_with_file = reconciliation_df[
+    reconciliation_df["reconciliation_status"] == "failed_manifest_file_exists"
+]
+row_mismatches = reconciliation_df[
+    reconciliation_df["reconciliation_status"] == "row_count_mismatch"
+]
+missing_files = reconciliation_df[
+    reconciliation_df["reconciliation_status"] == "manifest_success_missing_file"
+]
+
+if len(stale):
+    print(f"\\nStale files (no success manifest row): {len(stale)}")
+    display(stale[["endpoint", "year", "session_key", "file_path", "file_row_count"]].head(40))
+if len(failed_with_file):
+    print(f"\\nFailed-but-file-present rows: {len(failed_with_file)}")
+    display(failed_with_file[[
+        "endpoint", "year", "session_key", "manifest_status", "file_row_count", "notes"
+    ]].head(40))
+if len(row_mismatches):
+    print(f"\\nRow-count mismatches: {len(row_mismatches)}")
+    display(row_mismatches[[
+        "endpoint", "year", "session_key",
+        "manifest_record_count", "file_row_count", "row_count_delta",
+    ]].head(40))
+if len(missing_files):
+    print(f"\\nManifest-success but missing on disk: {len(missing_files)}")
+    display(missing_files[[
+        "endpoint", "year", "session_key", "manifest_output_path", "manifest_record_count",
+    ]].head(40))
+
+blocking = (
+    reconciliation_totals.get("stale_files", 0)
+    + reconciliation_totals.get("failed_but_file_present", 0)
+    + reconciliation_totals.get("row_mismatches", 0)
+    + reconciliation_totals.get("missing_files", 0)
+)
+if blocking:
+    print(
+        "\\nWARNING: Bronze reconciliation found inconsistencies. "
+        "If stale files exist, do not proceed to Silver until choosing a cleanup or retry policy. "
+        "Use the targeted retry section below for 429-related failures, or surgically delete "
+        "stale Bronze JSONL files before Silver."
+    )
+else:
+    print("\\nOK: Bronze reconciliation is clean — safe to proceed to Silver.")"""),
         md("## DuckDB validation (Bronze CSV evidence)"),
         code("""from openf1_pipeline.analytics.duckdb_validation import (
     save_duckdb_validation_reports,
@@ -291,6 +378,164 @@ drift_flags = schema_drift[schema_drift["possible_schema_drift_flag"] == True]
 print(f"Schema drift flags: {len(drift_flags)}")
 if len(drift_flags):
     display(drift_flags.head(15))"""),
+        md("""## Optional: targeted retry for failed session endpoints
+
+Use this section only when the main ingestion above left failures (typically HTTP 429 rate-limit
+storms) and you want to recover the affected sessions without re-running full Bronze.
+
+- Reads `artifacts/manifests/ingestion_manifest.csv` and retries failed **session-level**
+  endpoint calls with a slower base sleep (default `RETRY_SLEEP_SECONDS = 3.0`).
+- Writes only the target endpoint/session JSONL files. Successful Bronze data is **not** touched.
+- `starting_grid` is **excluded by default** (optional endpoint, consistently 404). Set
+  `RETRY_INCLUDE_OPTIONAL = True` to include it.
+- Original `ingestion_manifest.csv` is **not** modified. Retry results land in
+  `artifacts/manifests/ingestion_retry_manifest.csv`.
+- After retry, Bronze Spark reports and DuckDB validation are regenerated so
+  `bronze_row_counts.csv`, `bronze_schema_report.csv`, `bronze_schema_drift.csv`, and the
+  `duckdb_bronze_*` CSVs reflect the new file inventory.
+
+The retry **does not run** unless `RUN_TARGETED_RETRY = True`. Leave it `False` to skip."""),
+        code("""# Targeted retry configuration — does nothing unless RUN_TARGETED_RETRY=True.
+RUN_TARGETED_RETRY = False
+RETRY_SLEEP_SECONDS = 3.0          # base inter-request sleep (seconds)
+RETRY_MAX_PER_REQUEST = 5          # OpenF1Client per-request retry budget
+RETRY_INCLUDE_OPTIONAL = False     # set True to also retry starting_grid
+# Restrict the retry to specific endpoints (None = all required session endpoints).
+RETRY_ENDPOINTS = None             # e.g. ["session_result", "pit"]
+
+# Optional: delete known stale smoke-run JSONL files from Drive before/after retry.
+# Paths are relative to BRONZE_DIR. Set DELETE_STALE_SMOKE_FILES=True only when you
+# have confirmed the retry replaced them OR you want a manifest-clean Drive state.
+DELETE_STALE_SMOKE_FILES = False
+STALE_SMOKE_BRONZE_FILES = [
+    "session_result/year=2024/session_key=9472.jsonl",
+    "session_result/year=2024/session_key=9480.jsonl",
+    "pit/year=2024/session_key=9480.jsonl",
+]
+
+print(f"RUN_TARGETED_RETRY={RUN_TARGETED_RETRY}")
+print(f"RETRY_SLEEP_SECONDS={RETRY_SLEEP_SECONDS}, RETRY_MAX_PER_REQUEST={RETRY_MAX_PER_REQUEST}")
+print(f"RETRY_INCLUDE_OPTIONAL={RETRY_INCLUDE_OPTIONAL}, RETRY_ENDPOINTS={RETRY_ENDPOINTS}")
+print(f"DELETE_STALE_SMOKE_FILES={DELETE_STALE_SMOKE_FILES}")"""),
+        md("""### Run the targeted retry
+
+This cell is a no-op unless `RUN_TARGETED_RETRY = True`. The retry writes
+`artifacts/manifests/ingestion_retry_manifest.csv` next to the original manifest."""),
+        code("""from openf1_pipeline.ingestion.ingest import (
+    delete_stale_bronze_files,
+    retry_failed_session_endpoints,
+    summarize_retry_manifest,
+)
+
+retry_df = None
+retry_summary = None
+
+if RUN_TARGETED_RETRY:
+    # Optional: clean known stale smoke-run Drive files before retry.
+    if DELETE_STALE_SMOKE_FILES:
+        deleted = delete_stale_bronze_files(
+            bronze_dir=get_bronze_dir(),
+            paths=STALE_SMOKE_BRONZE_FILES,
+        )
+        print(f"Deleted {len(deleted)} stale Bronze file(s):")
+        for p in deleted:
+            print("  -", p)
+
+    retry_df = retry_failed_session_endpoints(
+        manifest_path=get_manifests_dir() / "ingestion_manifest.csv",
+        bronze_dir=get_bronze_dir(),
+        manifests_dir=get_manifests_dir(),
+        endpoints_to_retry=RETRY_ENDPOINTS,
+        include_optional=RETRY_INCLUDE_OPTIONAL,
+        sleep_seconds=RETRY_SLEEP_SECONDS,
+        max_retries_per_request=RETRY_MAX_PER_REQUEST,
+    )
+
+    retry_summary = summarize_retry_manifest(retry_df)
+    print("Retry summary:")
+    print(retry_summary)
+    if not retry_df.empty:
+        display(retry_df.groupby(["endpoint", "status"]).size().unstack(fill_value=0))
+else:
+    print("Targeted retry skipped (RUN_TARGETED_RETRY=False).")"""),
+        md("""### Regenerate Bronze reports, reconciliation, and DuckDB validation after retry
+
+Only runs when `RUN_TARGETED_RETRY = True` and the retry actually attempted rows.
+This refreshes `bronze_file_inventory.csv`, `bronze_row_counts.csv`,
+`bronze_schema_report.csv`, `bronze_schema_drift.csv`,
+`bronze_manifest_file_reconciliation.csv`,
+`bronze_manifest_file_reconciliation_summary.csv`, and all `duckdb_bronze_*` CSVs."""),
+        code("""if RUN_TARGETED_RETRY and retry_df is not None and not retry_df.empty:
+    refreshed_report = generate_bronze_reports(
+        bronze_dir=get_bronze_dir(),
+        data_quality_reports_dir=get_data_quality_reports_dir(),
+        schemas_dir=get_schemas_dir(),
+        engine=BRONZE_REPORT_ENGINE,
+        spark=spark,
+        allow_fallback=ALLOW_FALLBACK,
+    )
+
+    refreshed_reconciliation = generate_bronze_reconciliation_reports(
+        manifest_path=get_manifests_dir() / "ingestion_manifest.csv",
+        bronze_dir=get_bronze_dir(),
+        data_quality_reports_dir=get_data_quality_reports_dir(),
+        row_counts_df=pd.read_csv(refreshed_report["paths"]["bronze_row_counts"]),
+    )
+
+    refreshed_bronze_duckdb = validate_bronze_with_duckdb(get_data_quality_reports_dir())
+    refreshed_duckdb_paths = save_duckdb_validation_reports(
+        refreshed_bronze_duckdb, get_data_quality_reports_dir(), prefix="bronze"
+    )
+
+    print("Refreshed Bronze report summary:")
+    print(refreshed_report["summary"])
+    print("\\nRefreshed reconciliation totals:")
+    for k, v in refreshed_reconciliation["summary"].items():
+        print(f"  {k}: {v}")
+    print("\\nRefreshed DuckDB Bronze paths:")
+    for k, v in refreshed_duckdb_paths.items():
+        print(f"  {k}: {v}")
+
+    blocking_after_retry = (
+        refreshed_reconciliation["summary"].get("stale_files", 0)
+        + refreshed_reconciliation["summary"].get("failed_but_file_present", 0)
+        + refreshed_reconciliation["summary"].get("row_mismatches", 0)
+        + refreshed_reconciliation["summary"].get("missing_files", 0)
+    )
+    if blocking_after_retry == 0:
+        print("\\nOK: post-retry reconciliation is clean — safe to proceed to Silver.")
+    else:
+        print(
+            "\\nWARNING: post-retry reconciliation still shows inconsistencies. "
+            "Review bronze_manifest_file_reconciliation.csv before Silver."
+        )
+else:
+    print("Skipping Bronze report refresh — no retry rows or retry disabled.")"""),
+        md("""### Verify session_result coverage after retry
+
+Compares the original manifest, the retry manifest, and the current Drive file inventory."""),
+        code("""if RUN_TARGETED_RETRY and retry_df is not None and not retry_df.empty:
+    original_manifest = pd.read_csv(get_manifests_dir() / "ingestion_manifest.csv")
+    refreshed_inventory = pd.read_csv(
+        get_data_quality_reports_dir() / "bronze_file_inventory.csv"
+    )
+
+    sr_orig_ok = (
+        (original_manifest["endpoint"] == "session_result")
+        & (original_manifest["status"] == "success")
+    ).sum()
+    sr_retry_ok = (
+        (retry_df["endpoint"] == "session_result")
+        & (retry_df["status"] == "success")
+    ).sum()
+    sr_files = (refreshed_inventory["endpoint"] == "session_result").sum()
+
+    print(f"session_result manifest success (original run): {sr_orig_ok}")
+    print(f"session_result manifest success (retry only): {sr_retry_ok}")
+    print(f"session_result JSONL files on Drive (after retry): {sr_files}")
+    print(f"=> effective session_result coverage: {sr_orig_ok + sr_retry_ok} sessions")
+else:
+    print("Skipping coverage verification (retry not run or retry was empty).")"""),
     ]
     write_nb("01_ingestion_bronze.ipynb", cells)
 
@@ -968,7 +1213,7 @@ table_paths"""),
         md("## Architecture diagram placeholder"),
         code("""arch_md = FIGURES_DIR / "architecture_diagram_placeholder.md"
 arch_md.write_text(
-    '''# Architecture diagram placeholder\\n\\n'
+    '# Architecture diagram placeholder\\n\\n'
     'Insert Medallion pipeline diagram for MBA report:\\n\\n'
     'OpenF1 API → Bronze JSONL → PySpark Bronze reports → DuckDB validation\\n'
     '→ PySpark Silver → DuckDB → PySpark Gold → DuckDB → sklearn/LightGBM modeling\\n',
