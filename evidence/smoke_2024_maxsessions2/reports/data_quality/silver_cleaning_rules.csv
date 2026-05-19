@@ -1,0 +1,11 @@
+table_name,rule_id,rule_description,rows_before,rows_after,rows_removed,values_imputed,columns_affected,severity,rationale
+meetings,SIL_NULL_MEETING_KEY,Drop rows with null keys: ['meeting_key'],25,25,0,0,meeting_key,high,meeting_key is required for calendar joins
+sessions,SIL_NULL_SESSION_KEY,Drop rows with null keys: ['session_key'],123,123,0,0,session_key,high,session_key is the primary join key for all session tables
+drivers,SIL_NULL_DRIVER_KEYS,"Drop rows with null keys: ['session_key', 'driver_number']",40,40,0,0,"session_key,driver_number",high,session_key and driver_number required for driver-level joins
+laps,SIL_NULL_LAP_KEYS,"Drop rows with null keys: ['session_key', 'driver_number', 'lap_number']",2031,2031,0,0,"session_key,driver_number,lap_number",high,"Lap grain requires session, driver, and lap number"
+pit,SIL_NULL_PIT_KEYS,"Drop rows with null keys: ['session_key', 'driver_number']",62,62,0,0,"session_key,driver_number",high,Pit rows require session and driver
+weather,SIL_NULL_WEATHER_SESSION,Drop rows with null keys: ['session_key'],303,303,0,0,session_key,high,Weather rows must link to a session
+position,SIL_NULL_POSITION_KEYS,"Drop rows with null keys: ['session_key', 'driver_number']",927,927,0,0,"session_key,driver_number",high,Position updates require session and driver
+race_control,SIL_NULL_RC_SESSION,Drop rows with null keys: ['session_key'],139,139,0,0,session_key,high,Race control messages must link to a session
+session_result,SIL_NULL_RESULT_KEYS,"Drop rows with null keys: ['session_key', 'driver_number']",40,40,0,0,"session_key,driver_number",high,Final classification requires session and driver
+starting_grid,SIL_EMPTY,No Bronze starting_grid data,0,0,0,0,,low,Optional endpoint; heuristic may use sessions/drivers in Gold

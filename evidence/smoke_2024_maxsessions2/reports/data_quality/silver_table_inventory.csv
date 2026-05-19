@@ -1,0 +1,11 @@
+table_name,row_count,column_count,duplicate_full_rows,total_missing_cells,total_cells,missing_cell_pct
+meetings,25,21,0,0,525,0.0
+sessions,123,18,0,0,2214,0.0
+drivers,40,16,0,1,640,0.1562
+laps,2031,20,0,725,40620,1.7848
+pit,62,12,0,62,744,8.3333
+weather,303,14,0,0,4242,0.0
+position,927,9,0,0,8343,0.0
+race_control,139,15,0,534,2085,25.6115
+session_result,40,15,0,22,600,3.6667
+starting_grid,0,0,0,0,0,0.0

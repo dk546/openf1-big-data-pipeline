@@ -137,13 +137,13 @@ def build_cleaning_impact_summary(
     return pd.DataFrame(rows)
 
 
-def run_silver_cleaning(
+def run_silver_cleaning_pandas(
     bronze_dir: Path,
     silver_dir: Path,
     data_quality_reports_dir: Path,
 ) -> dict[str, Any]:
     """
-    Full Silver pipeline: audit → clean → save parquet → write DQ CSV reports.
+    Pandas Silver pipeline (fallback): audit → clean → save parquet → write DQ CSV reports.
     """
     bronze_dir = Path(bronze_dir)
     silver_dir = Path(silver_dir)
@@ -279,9 +279,32 @@ def run_silver_cleaning(
         ),
     }
 
-    logger.info("Silver cleaning complete: %s", summary)
+    summary["engine"] = "pandas"
+    logger.info("Silver pandas cleaning complete: %s", summary)
     return {
         "paths": {k: str(v) for k, v in paths.items()},
         "summary": summary,
         "silver_tables": {k: len(v) for k, v in silver_tables.items()},
     }
+
+
+def run_silver_cleaning(
+    bronze_dir: Path,
+    silver_dir: Path,
+    data_quality_reports_dir: Path,
+    engine: str = "spark",
+    spark=None,
+) -> dict[str, Any]:
+    """Run Silver cleaning (Spark by default; pandas fallback)."""
+    if engine == "spark":
+        try:
+            from openf1_pipeline.silver.build_silver_spark import run_silver_cleaning_spark
+            from openf1_pipeline.utils.spark import get_spark
+
+            spark = spark or get_spark()
+            return run_silver_cleaning_spark(
+                spark, bronze_dir, silver_dir, data_quality_reports_dir
+            )
+        except Exception as exc:
+            logger.warning("Silver Spark engine failed; falling back to pandas: %s", exc)
+    return run_silver_cleaning_pandas(bronze_dir, silver_dir, data_quality_reports_dir)

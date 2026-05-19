@@ -109,9 +109,9 @@ def save_dataframe_parquet(df: pd.DataFrame, output_path: Path) -> None:
 
 
 def read_parquet_if_exists(path: Path) -> pd.DataFrame | None:
-    """Read parquet if file exists; otherwise return None."""
+    """Read parquet if file or Spark-style parquet directory exists; otherwise return None."""
     path = Path(path)
-    if not path.is_file():
+    if not (path.is_file() or path.is_dir()):
         return None
     return pd.read_parquet(path)
 

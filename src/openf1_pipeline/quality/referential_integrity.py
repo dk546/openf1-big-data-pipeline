@@ -23,7 +23,7 @@ def check_referential_integrity(
         "child_table": child_table,
         "parent_table": parent_table,
         "key_columns": ",".join(key_columns),
-        "child_rows": len(child_df),
+        "distinct_child_keys": len(child_df),
         "unmatched_rows": 0,
         "unmatched_pct": 0.0,
         "status": "checked",
@@ -50,10 +50,12 @@ def check_referential_integrity(
         indicator=True,
     )
     unmatched = int((merged["_merge"] == "left_only").sum())
-    child_rows = len(child_keys)
-    base["child_rows"] = child_rows
+    distinct_child_keys = len(child_keys)
+    base["distinct_child_keys"] = distinct_child_keys
     base["unmatched_rows"] = unmatched
-    base["unmatched_pct"] = round(unmatched / child_rows * 100, 4) if child_rows else 0.0
+    base["unmatched_pct"] = (
+        round(unmatched / distinct_child_keys * 100, 4) if distinct_child_keys else 0.0
+    )
     return pd.DataFrame([base])
 
 
@@ -86,7 +88,7 @@ def build_referential_integrity_report(
                             "child_table": child_name,
                             "parent_table": "sessions",
                             "key_columns": "session_key",
-                            "child_rows": 0,
+                            "distinct_child_keys": 0,
                             "unmatched_rows": 0,
                             "unmatched_pct": 0.0,
                             "status": "skipped_missing_table",
@@ -113,7 +115,7 @@ def build_referential_integrity_report(
                             "child_table": child_name,
                             "parent_table": "drivers",
                             "key_columns": "session_key,driver_number",
-                            "child_rows": 0,
+                            "distinct_child_keys": 0,
                             "unmatched_rows": 0,
                             "unmatched_pct": 0.0,
                             "status": "skipped_missing_table",
