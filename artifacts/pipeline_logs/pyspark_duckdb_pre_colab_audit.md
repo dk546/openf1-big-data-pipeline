@@ -154,6 +154,7 @@ Setup validates repo files and package import but does not call `get_spark()` or
 | Fix | File | Status |
 |-----|------|--------|
 | `read_parquet_if_exists` accepts Spark Parquet directories | `src/openf1_pipeline/utils/io.py` | **Applied** |
+| DuckDB Silver GROUP BY treats `"session_key"` as one column | `src/openf1_pipeline/analytics/duckdb_validation.py` | **Applied** — see `duckdb_validation_fix.md` |
 | Full audit report | `artifacts/pipeline_logs/pyspark_duckdb_pre_colab_audit.md` | **Applied** |
 
 ### `read_parquet_if_exists` change

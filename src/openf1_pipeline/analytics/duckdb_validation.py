@@ -16,6 +16,76 @@ from openf1_pipeline.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
+def normalize_key_columns(key_cols: str | list[str] | None) -> list[str]:
+    """Ensure key column specs are a list of column names, not split characters."""
+    if key_cols is None:
+        return []
+    if isinstance(key_cols, str):
+        return [key_cols]
+    return list(key_cols)
+
+
+def quote_identifier(col: str) -> str:
+    """Quote a DuckDB identifier safely."""
+    return '"' + col.replace('"', '""') + '"'
+
+
+def _sql_column_list(key_cols: str | list[str] | None) -> str:
+    """Build a comma-separated list of quoted SQL column identifiers."""
+    return ", ".join(quote_identifier(c) for c in normalize_key_columns(key_cols))
+
+
+def _table_column_names(con: duckdb.DuckDBPyConnection, table_name: str) -> set[str]:
+    return set(con.execute(f"DESCRIBE {table_name}").df()["column_name"].tolist())
+
+
+def _missing_columns(required: list[str], available: set[str]) -> list[str]:
+    return [c for c in required if c not in available]
+
+
+def _skipped_report(table: str, missing: list[str]) -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "status": "skipped_missing_columns",
+                "table": table,
+                "missing_columns": ",".join(missing),
+            }
+        ]
+    )
+
+
+def _group_by_count_report(
+    con: duckdb.DuckDBPyConnection,
+    table: str,
+    key_cols: str | list[str] | None,
+    limit: int = 20,
+) -> pd.DataFrame:
+    """Run GROUP BY count query when all key columns exist; otherwise skip gracefully."""
+    cols = normalize_key_columns(key_cols)
+    if not cols:
+        return _skipped_report(table, [])
+
+    available = _table_column_names(con, table)
+    missing = _missing_columns(cols, available)
+    if missing:
+        logger.warning(
+            "DuckDB skip %s rows_by_key: missing columns %s", table, missing
+        )
+        return _skipped_report(table, missing)
+
+    col_sql = _sql_column_list(cols)
+    return con.execute(
+        f"""
+        SELECT {col_sql}, COUNT(*) AS row_count
+        FROM {table}
+        GROUP BY {col_sql}
+        ORDER BY row_count DESC
+        LIMIT {limit}
+        """
+    ).df()
+
+
 def create_duckdb_connection(database_path: str | None = None) -> duckdb.DuckDBPyConnection:
     """Create an in-memory DuckDB connection (optional on-disk path)."""
     if database_path:
@@ -153,24 +223,48 @@ def validate_silver_with_duckdb(silver_dir: Path) -> dict[str, pd.DataFrame]:
     ok_tables = {r["table_name"] for r in inventory_rows if r.get("status") == "ok"}
 
     if "session_result" in ok_tables:
-        reports["session_result_target_support"] = con.execute(
-            """
-            SELECT
-                COUNT(*) AS total_rows,
-                SUM(CASE WHEN points > 0 THEN 1 ELSE 0 END) AS points_positive_rows,
-                ROUND(100.0 * SUM(CASE WHEN points > 0 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 4)
-                    AS points_positive_pct
-            FROM session_result
-            """
-        ).df()
-        reports["session_result_duplicate_keys"] = con.execute(
-            """
-            SELECT session_key, driver_number, COUNT(*) AS cnt
-            FROM session_result
-            GROUP BY session_key, driver_number
-            HAVING COUNT(*) > 1
-            """
-        ).df()
+        sr_cols = _table_column_names(con, "session_result")
+        target_required = ["points"]
+        dup_required = normalize_key_columns(["session_key", "driver_number"])
+        target_missing = _missing_columns(target_required, sr_cols)
+        dup_missing = _missing_columns(dup_required, sr_cols)
+
+        if target_missing:
+            logger.warning(
+                "DuckDB skip session_result_target_support: missing %s", target_missing
+            )
+            reports["session_result_target_support"] = _skipped_report(
+                "session_result", target_missing
+            )
+        else:
+            reports["session_result_target_support"] = con.execute(
+                """
+                SELECT
+                    COUNT(*) AS total_rows,
+                    SUM(CASE WHEN points > 0 THEN 1 ELSE 0 END) AS points_positive_rows,
+                    ROUND(100.0 * SUM(CASE WHEN points > 0 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 4)
+                        AS points_positive_pct
+                FROM session_result
+                """
+            ).df()
+
+        if dup_missing:
+            logger.warning(
+                "DuckDB skip session_result_duplicate_keys: missing %s", dup_missing
+            )
+            reports["session_result_duplicate_keys"] = _skipped_report(
+                "session_result", dup_missing
+            )
+        else:
+            dup_sql = _sql_column_list(dup_required)
+            reports["session_result_duplicate_keys"] = con.execute(
+                f"""
+                SELECT {dup_sql}, COUNT(*) AS cnt
+                FROM session_result
+                GROUP BY {dup_sql}
+                HAVING COUNT(*) > 1
+                """
+            ).df()
 
     for tbl, key_cols in [
         ("laps", "session_key"),
@@ -178,16 +272,9 @@ def validate_silver_with_duckdb(silver_dir: Path) -> dict[str, pd.DataFrame]:
         ("weather", "session_key"),
     ]:
         if tbl in ok_tables:
-            cols = ", ".join(key_cols)
-            reports[f"{tbl}_rows_by_session_key"] = con.execute(
-                f"""
-                SELECT {cols}, COUNT(*) AS row_count
-                FROM {tbl}
-                GROUP BY {cols}
-                ORDER BY row_count DESC
-                LIMIT 20
-                """
-            ).df()
+            reports[f"{tbl}_rows_by_session_key"] = _group_by_count_report(
+                con, tbl, key_cols
+            )
 
     con.close()
     return reports
@@ -207,25 +294,38 @@ def validate_gold_with_duckdb(gold_path: Path) -> dict[str, pd.DataFrame]:
     con.execute(f"CREATE OR REPLACE VIEW gold AS SELECT * FROM read_parquet('{glob}')")
 
     reports["gold_row_count"] = con.execute("SELECT COUNT(*) AS total_rows FROM gold").df()
-    reports["gold_duplicate_keys"] = con.execute(
-        """
-        SELECT session_key, meeting_key, driver_number, COUNT(*) AS cnt
-        FROM gold
-        GROUP BY session_key, meeting_key, driver_number
-        HAVING COUNT(*) > 1
-        """
-    ).df()
-    reports["gold_target_distribution"] = con.execute(
-        """
-        SELECT points_finish, COUNT(*) AS cnt,
-               ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 4) AS pct
-        FROM gold
-        GROUP BY points_finish
-        ORDER BY points_finish
-        """
-    ).df()
 
-    if "team_name" in con.execute("DESCRIBE gold").df()["column_name"].tolist():
+    grain_keys = normalize_key_columns(["session_key", "meeting_key", "driver_number"])
+    gold_cols = _table_column_names(con, "gold")
+    grain_missing = _missing_columns(grain_keys, gold_cols)
+    if grain_missing:
+        logger.warning("DuckDB skip gold_duplicate_keys: missing %s", grain_missing)
+        reports["gold_duplicate_keys"] = _skipped_report("gold", grain_missing)
+    else:
+        grain_sql = _sql_column_list(grain_keys)
+        reports["gold_duplicate_keys"] = con.execute(
+            f"""
+            SELECT {grain_sql}, COUNT(*) AS cnt
+            FROM gold
+            GROUP BY {grain_sql}
+            HAVING COUNT(*) > 1
+            """
+        ).df()
+
+    if "points_finish" in gold_cols:
+        reports["gold_target_distribution"] = con.execute(
+            """
+            SELECT points_finish, COUNT(*) AS cnt,
+                   ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 4) AS pct
+            FROM gold
+            GROUP BY points_finish
+            ORDER BY points_finish
+            """
+        ).df()
+    else:
+        reports["gold_target_distribution"] = _skipped_report("gold", ["points_finish"])
+
+    if "team_name" in gold_cols and "points_finish" in gold_cols:
         reports["points_finish_by_team"] = con.execute(
             """
             SELECT team_name, points_finish, COUNT(*) AS cnt
@@ -236,7 +336,7 @@ def validate_gold_with_duckdb(gold_path: Path) -> dict[str, pd.DataFrame]:
             """
         ).df()
 
-    if "circuit_short_name" in con.execute("DESCRIBE gold").df()["column_name"].tolist():
+    if "circuit_short_name" in gold_cols and "points_finish" in gold_cols:
         reports["points_finish_by_circuit"] = con.execute(
             """
             SELECT circuit_short_name, points_finish, COUNT(*) AS cnt
@@ -247,13 +347,13 @@ def validate_gold_with_duckdb(gold_path: Path) -> dict[str, pd.DataFrame]:
             """
         ).df()
 
-    # Missingness on a sample of columns (practical limit)
-    cols = con.execute("DESCRIBE gold").df()["column_name"].tolist()[:40]
+    cols = list(gold_cols)[:40]
     miss_rows = []
     total = con.execute("SELECT COUNT(*) FROM gold").fetchone()[0]
     for col in cols:
+        qcol = quote_identifier(col)
         nulls = con.execute(
-            f"SELECT COUNT(*) FROM gold WHERE \"{col}\" IS NULL"
+            f"SELECT COUNT(*) FROM gold WHERE {qcol} IS NULL"
         ).fetchone()[0]
         miss_rows.append(
             {
