@@ -1,0 +1,63 @@
+feature_name,feature_group,dtype,description,source_table,modeling_role,allowed_for_modeling,missing_pct
+session_key,identifiers,int64,Grain key (identifiers).,session_result,identifier,False,0.0
+meeting_key,identifiers,int64,Grain key (identifiers).,session_result,identifier,False,0.0
+driver_number,identifiers,int64,Grain key (identifiers).,session_result,identifier,False,0.0
+result_dnf,diagnostic_outcome,bool,Post-race outcome for evaluation only; not for modeling.,session_result,diagnostic_outcome,False,0.0
+result_dns,diagnostic_outcome,bool,Post-race outcome for evaluation only; not for modeling.,session_result,diagnostic_outcome,False,0.0
+result_dsq,diagnostic_outcome,bool,Post-race outcome for evaluation only; not for modeling.,session_result,diagnostic_outcome,False,0.0
+points_finish,target,int32,"Binary target: 1 if driver scored points (>0), else 0.",session_result,target,False,0.0
+final_position,diagnostic_outcome,float64,Post-race outcome for evaluation only; not for modeling.,session_result,diagnostic_outcome,False,5.0
+result_points,diagnostic_outcome,float64,Post-race outcome for evaluation only; not for modeling.,session_result,diagnostic_outcome,False,0.0
+full_name,metadata,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+name_acronym,metadata,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+team_name,metadata,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+driver_country_code,metadata,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+session_type,metadata,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+session_name,metadata,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+circuit_short_name,metadata,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+location,metadata,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+session_year,metadata,int64,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+session_country_name,metadata,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+meeting_name,metadata,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+circuit_key,metadata,int64,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+lap_count,laps,int64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+avg_lap_duration,laps,float64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+median_lap_duration,laps,float64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+best_lap_duration,laps,float64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+std_lap_duration,laps,float64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,2.5
+avg_sector_1,laps,float64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+avg_sector_2,laps,float64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+avg_sector_3,laps,float64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+avg_i1_speed,laps,float64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+avg_i2_speed,laps,float64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+avg_st_speed,laps,float64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+pit_out_lap_count,laps,int64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+avg_first5_lap_duration,laps,float64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+best_first5_lap_duration,laps,float64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+std_first5_lap_duration,laps,float64,Lap-level aggregate from Silver laps_clean.,laps,predictive_feature,True,2.5
+pit_stop_count,pit,int64,Pit stop aggregate from Silver pit_clean.,pit,predictive_feature,True,0.0
+avg_pit_duration,pit,float64,Pit stop aggregate from Silver pit_clean.,pit,predictive_feature,True,5.0
+min_pit_duration,pit,float64,Pit stop aggregate from Silver pit_clean.,pit,predictive_feature,True,5.0
+max_pit_duration,pit,float64,Pit stop aggregate from Silver pit_clean.,pit,predictive_feature,True,5.0
+first_pit_lap,pit,float64,Pit stop aggregate from Silver pit_clean.,pit,predictive_feature,True,5.0
+early_pit_stop_flag,pit,int32,Pit stop aggregate from Silver pit_clean.,pit,predictive_feature,True,0.0
+first_observed_position,position,int64,Early-race position aggregate (first five observations).,position,predictive_feature,True,0.0
+early_avg_position,position,float64,Early-race position aggregate (first five observations).,position,predictive_feature,True,0.0
+early_min_position,position,int64,Early-race position aggregate (first five observations).,position,predictive_feature,True,0.0
+early_max_position,position,int64,Early-race position aggregate (first five observations).,position,predictive_feature,True,0.0
+position_observation_count,position,int64,Early-race position aggregate (first five observations).,position,predictive_feature,True,0.0
+diagnostic_final_observed_position,diagnostic_outcome,int64,Post-race outcome for evaluation only; not for modeling.,session_result,diagnostic_outcome,False,0.0
+avg_air_temperature,weather,float64,Session-level weather joined to each driver.,weather,predictive_feature,True,0.0
+avg_track_temperature,weather,float64,Session-level weather joined to each driver.,weather,predictive_feature,True,0.0
+avg_humidity,weather,float64,Session-level weather joined to each driver.,weather,predictive_feature,True,0.0
+avg_pressure,weather,float64,Session-level weather joined to each driver.,weather,predictive_feature,True,0.0
+avg_wind_speed,weather,float64,Session-level weather joined to each driver.,weather,predictive_feature,True,0.0
+rainfall_mean,weather,float64,Session-level weather joined to each driver.,weather,predictive_feature,True,0.0
+rainfall_flag,weather,int32,Session-level weather joined to each driver.,weather,predictive_feature,True,0.0
+race_control_message_count,race_control,int64,Session-level race control message counts.,race_control,predictive_feature,True,0.0
+flag_message_count,race_control,int64,Session-level race control message counts.,race_control,predictive_feature,True,0.0
+yellow_flag_count,race_control,int64,Session-level race control message counts.,race_control,predictive_feature,True,0.0
+red_flag_count,race_control,int64,Session-level race control message counts.,race_control,predictive_feature,True,0.0
+green_flag_count,race_control,int64,Session-level race control message counts.,race_control,predictive_feature,True,0.0
+safety_car_message_count,race_control,int64,Session-level race control message counts.,race_control,predictive_feature,True,0.0
+pit_exit_message_count,race_control,int64,Session-level race control message counts.,race_control,predictive_feature,True,0.0

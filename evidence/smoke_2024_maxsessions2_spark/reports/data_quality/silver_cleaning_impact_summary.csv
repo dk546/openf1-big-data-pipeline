@@ -1,0 +1,11 @@
+table_name,rows_before,rows_after,rows_removed,row_removal_pct,columns_before,columns_after,missing_cells_before,missing_cells_after,missing_cell_pct_before,missing_cell_pct_after,duplicate_rows_before,duplicate_rows_after
+meetings,25,25,0,0.0,19,19,0,0,0.0,0.0,0,0
+sessions,123,123,0,0.0,16,16,0,0,0.0,0.0,0,0
+drivers,40,40,0,0.0,13,13,1,1,0.1923,0.1923,0,0
+laps,2031,2031,0,0.0,17,17,725,725,2.0998,2.0998,0,0
+pit,62,62,0,0.0,9,9,62,62,11.1111,11.1111,0,0
+weather,303,303,0,0.0,11,11,0,0,0.0,0.0,0,0
+position,927,927,0,0.0,6,6,0,0,0.0,0.0,0,0
+race_control,139,139,0,0.0,12,12,534,534,32.0144,32.0144,0,0
+session_result,40,40,0,0.0,12,12,22,22,4.5833,4.5833,0,0
+starting_grid,0,0,0,0.0,0,0,0,0,0.0,0.0,0,0

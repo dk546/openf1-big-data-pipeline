@@ -11,6 +11,7 @@ from openf1_pipeline.silver.cleaning_common import (
     drop_rows_missing_keys,
     empty_cleaning_log,
     log_rule,
+    log_schema_prep,
     remove_domain_invalid,
     standardize_column_names,
 )
@@ -38,6 +39,19 @@ def clean_session_result(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     df = coerce_numeric(
         df,
         ["session_key", "driver_number", "position", "points", "number_of_laps", "meeting_key"],
+    )
+    log = log_schema_prep(
+        log,
+        table,
+        len(df),
+        numeric_cols=[
+            "session_key",
+            "driver_number",
+            "position",
+            "points",
+            "number_of_laps",
+            "meeting_key",
+        ],
     )
 
     df, log = drop_rows_missing_keys(

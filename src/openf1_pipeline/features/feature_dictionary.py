@@ -19,6 +19,7 @@ from openf1_pipeline.utils.io import ensure_dir, save_dataframe_csv
 FEATURE_DICTIONARY_COLUMNS = [
     "feature_name",
     "feature_group",
+    "feature_tier",
     "dtype",
     "description",
     "source_table",
@@ -133,7 +134,7 @@ def _modeling_role(name: str, allowed: bool) -> str:
     return "metadata"
 
 
-def _description(name: str, role: str, group: str) -> str:
+def _description(name: str, role: str, group: str, feature_tier: str) -> str:
     if role == "target":
         return "Binary target: 1 if driver scored points (>0), else 0."
     if role == "identifier":
@@ -143,14 +144,26 @@ def _description(name: str, role: str, group: str) -> str:
     if name.startswith("diagnostic_"):
         return "Diagnostic field excluded from model features."
     if group == "laps":
+        if feature_tier == "tier1_early":
+            return "Tier 1 early-session lap aggregate (first five laps) from Silver laps_clean."
+        if feature_tier == "tier2_full_session":
+            return "Tier 2 full-session analytical lap aggregate from Silver laps_clean."
         return "Lap-level aggregate from Silver laps_clean."
     if group == "pit":
+        if feature_tier == "tier2_full_session":
+            return "Tier 2 full-session analytical pit aggregate from Silver pit_clean."
         return "Pit stop aggregate from Silver pit_clean."
     if group == "position":
-        return "Early-race position aggregate (first five observations)."
+        if feature_tier == "tier1_early":
+            return "Tier 1 early-session position aggregate (first five observations)."
+        return "Position aggregate from Silver position_clean."
     if group == "weather":
+        if feature_tier == "tier2_full_session":
+            return "Tier 2 full-session analytical weather aggregate joined to each driver."
         return "Session-level weather joined to each driver."
     if group == "race_control":
+        if feature_tier == "tier2_full_session":
+            return "Tier 2 full-session analytical race control message counts."
         return "Session-level race control message counts."
     if group == "metadata":
         return "Driver, session, or meeting metadata."
@@ -160,6 +173,7 @@ def _description(name: str, role: str, group: str) -> str:
 def build_feature_dictionary(gold_df: pd.DataFrame) -> pd.DataFrame:
     """Build feature dictionary from Gold mart columns."""
     from openf1_pipeline.gold.build_feature_mart import build_leakage_guard_report
+    from openf1_pipeline.modeling.feature_selection import infer_feature_tier
 
     guard = build_leakage_guard_report(gold_df)
     allowed_map = guard.set_index("column_name")["allowed_for_modeling"].to_dict()
@@ -169,13 +183,15 @@ def build_feature_dictionary(gold_df: pd.DataFrame) -> pd.DataFrame:
         group = _infer_feature_group(col)
         allowed = bool(allowed_map.get(col, False))
         role = _modeling_role(col, allowed)
+        feature_tier = infer_feature_tier(col)
         missing = gold_df[col].isna().sum()
         rows.append(
             {
                 "feature_name": col,
                 "feature_group": group,
+                "feature_tier": feature_tier,
                 "dtype": str(gold_df[col].dtype),
-                "description": _description(col, role, group),
+                "description": _description(col, role, group, feature_tier),
                 "source_table": SOURCE_TABLE_BY_GROUP.get(group, "gold_mart"),
                 "modeling_role": role,
                 "allowed_for_modeling": allowed,

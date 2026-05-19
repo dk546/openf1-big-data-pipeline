@@ -12,6 +12,7 @@ from openf1_pipeline.silver.cleaning_common import (
     drop_rows_missing_keys,
     empty_cleaning_log,
     log_rule,
+    log_schema_prep,
     remove_domain_invalid,
     standardize_column_names,
 )
@@ -38,6 +39,13 @@ def clean_pit(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     df = standardize_column_names(df)
     df = coerce_numeric(df, ["session_key", "driver_number", "lap_number", "pit_duration", "duration"])
     df = coerce_datetime(df, ["date", "time"])
+    log = log_schema_prep(
+        log,
+        table,
+        len(df),
+        numeric_cols=["session_key", "driver_number", "lap_number", "pit_duration", "duration"],
+        datetime_cols=["date", "time"],
+    )
 
     df, log = drop_rows_missing_keys(
         df,

@@ -1,0 +1,10 @@
+endpoint,total_rows,file_count
+drivers,40.0,2
+laps,2031.0,2
+meetings,25.0,1
+pit,62.0,2
+position,927.0,2
+race_control,139.0,2
+session_result,40.0,2
+sessions,123.0,1
+weather,303.0,2

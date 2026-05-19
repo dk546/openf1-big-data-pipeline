@@ -12,15 +12,15 @@ A Medallion Architecture Data Pipeline for Formula 1 Race Performance Classifica
 
 ## 2. Project purpose
 
-This resit project builds an **evidence-driven, reproducible data pipeline** for Formula 1 data from the [OpenF1 API](https://openf1.org/). The pipeline lands raw data (Bronze), cleans and audits it (Silver), integrates a driver-race feature mart (Gold), and runs simple classification models to validate that the Gold layer supports analysis.
+This project builds an **evidence-driven, reproducible Big Data Infrastructure pipeline** for Formula 1 data from the [OpenF1 API](https://openf1.org/). The pipeline lands raw data (Bronze), cleans and audits it (Silver), integrates a driver-race feature mart (Gold), and uses simple classification models as the **final consumption layer** to validate that the Gold mart supports analysis.
 
-The MBA report is supported by **generated tables, manifests, and quality reports**—not narrative claims alone.
+The written deliverable is supported by **generated tables, manifests, and quality reports**—not narrative claims alone.
 
 ---
 
-## 3. Course / resit framing
+## 3. Course context
 
-This work is submitted for an **MBA Big Data Infrastructures** resit. Grading emphasizes:
+This project was developed in an **MBA Big Data Infrastructures** course. The work emphasizes:
 
 1. **Data Quality & Cleaning**
 2. **Pipeline Architecture & Technology Rationale**
@@ -57,7 +57,7 @@ Do **not** treat this as a Kaggle-style classification competition.
 
 ## Bronze layer evidence
 
-Bronze ingestion (`01_ingestion_bronze.ipynb`) must be executed in **Google Colab Pro Plus** for official resit evidence. A local smoke test is for development only.
+Bronze ingestion (`01_ingestion_bronze.ipynb`) should be executed in **Google Colab Pro Plus** for reproducible, documented pipeline evidence. A local smoke test is for development only.
 
 **Artifacts produced:**
 
@@ -86,9 +86,9 @@ Raw payloads: `data/bronze/{endpoint}/…/*.jsonl` (typically on Google Drive vi
 | Official execution | **Google Colab Pro Plus** |
 | Persistent outputs | **Google Drive** (`OPENF1_DATA_ROOT`) |
 
-**No local execution is required** for MBA evidence. Paths assume a cloned repo in Colab; bulk `data/` lives on Drive (see `notebooks/00_colab_setup.ipynb` and the setup cell in each pipeline notebook).
+**No local execution is required** for full pipeline evidence. Paths assume a cloned repo in Colab; bulk `data/` lives on Drive (see `notebooks/00_colab_setup.ipynb` and the setup cell in each pipeline notebook).
 
-**Databricks is not required** and is out of scope for this resit.
+**Databricks is not required** and is out of scope for this project.
 
 ---
 
@@ -137,6 +137,8 @@ OpenF1 API → Bronze (raw) → Silver (cleaned) → Gold (feature mart) → Mod
 
 **Question:** Can we predict whether a driver finishes in the points?
 
+**Task framing:** **Points-finish classification using integrated race-session features** — not strict pre-race prediction. The default model uses **Tier 1** early-session features (e.g. first-five-lap pace, early position) and **Tier 2** full-session analytical features (e.g. lap aggregates, pit stops, race-control counts, weather means).
+
 | Field | Definition |
 |-------|------------|
 | `points_finish` | `1` if `points` > 0 in `session_result`; `0` otherwise |
@@ -151,7 +153,7 @@ OpenF1 API → Bronze (raw) → Silver (cleaned) → Gold (feature mart) → Mod
 4. **Random Forest** — nonlinear interactions  
 5. **LightGBM** — strong tabular model  
 
-Set `MODELING_MODE = "smoke"` for wiring verification; use `"full"` for official MBA season splits after 2023–2025 Gold run.
+Set `MODELING_MODE = "smoke"` for wiring verification; use `"full"` for official season splits after a full 2023–2025 Gold run.
 
 No deep learning. Feature engineering and leakage control are completed in Gold **before** modeling.
 
@@ -169,15 +171,20 @@ Use **season-based** splits only — not a random row-level split (avoids leakin
 
 ## 10. Feature and leakage strategy
 
-**Allowed predictive groups:** metadata, early lap pace, lap aggregates, pit strategy, early position proxy, weather, race control counts.
+**Tier 1 — early-session features:** first-five-lap pace (`avg_first5_lap_duration`, …), early position proxies (`first_observed_position`, `early_avg_position`, …).
+
+**Tier 2 — full-session analytical features:** full-session lap pace (`lap_count`, `avg_lap_duration`, …), pit-stop counts and durations, session-level weather aggregates, race-control message counts.
+
+**Optional categoricals (opt-in):** `team_name`, `circuit_short_name`, `session_country_name`, `location`, `session_type`, `session_name` (`session_year` excluded from default X when using season splits).
 
 **Forbidden model inputs** (may exist for labels/diagnostics): `position`, `points`, `final_position`, `result_*`, `duration`, `gap_to_leader`, `number_of_laps`, `diagnostic_*`.
 
 Enforced by:
 
 - `reports/data_quality/gold_leakage_guard_report.csv`
-- `artifacts/feature_definitions/feature_dictionary.csv` (`modeling_role`, `allowed_for_modeling`)
-- `get_model_feature_columns()` in `gold/build_feature_mart.py`
+- `artifacts/feature_definitions/feature_dictionary.csv` (`modeling_role`, `allowed_for_modeling`, `feature_tier`)
+- `artifacts/feature_definitions/model_feature_plan.csv` (frozen default 40 numeric features)
+- `openf1_pipeline.modeling.feature_selection` and `get_model_feature_columns()` in `modeling/train.py`
 
 Design Gold and review leakage reports **before** running notebook `04`.
 
@@ -264,9 +271,9 @@ Runtime dependencies live in `requirements.txt`. `pyproject.toml` defines the in
 | **Target** | `points_finish` = 1 if `points` > 0, else 0 |
 | **Output** | `data/gold/driver_race_feature_mart.parquet` |
 
-**Feature groups:** lap pace (incl. first-five laps), pit stops, early position, session weather, race-control counts, driver/session/meeting metadata.
+**Feature groups:** Tier 1 early-session (first-five laps, early position); Tier 2 full-session analytical (lap aggregates, pit, weather, race control); driver/session/meeting metadata (optional categoricals).
 
-**Leakage guard:** `reports/data_quality/gold_leakage_guard_report.csv` marks outcome fields (`position`, `points`, `final_position`, `result_*`, etc.) as **not** allowed for modeling. Engineered features use early-race windows only where specified (e.g. first five laps / position observations).
+**Leakage guard:** `reports/data_quality/gold_leakage_guard_report.csv` marks raw outcome fields (`position`, `points`, `final_position`, `result_*`, etc.) as **not** allowed for modeling. Tier 2 analytical features are **allowed** for the default integrated-session task; they are documented in `model_feature_plan.csv`, not treated as label leakage.
 
 **Reports:**
 
@@ -287,7 +294,7 @@ Confirm Gold mart row count matches Silver `session_result_clean` driver-session
 
 - Bulk `data/` stays on **Drive** (gitignored).
 - Commit **code** and lightweight **CSV summaries** to GitHub when appropriate.
-- For the MBA report, cite **Drive-generated outputs** from the full Colab run.
+- For written analysis or reporting, cite **Drive-generated outputs** from the full Colab run.
 
 ---
 

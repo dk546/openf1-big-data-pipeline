@@ -11,6 +11,7 @@ from openf1_pipeline.silver.cleaning_common import (
     drop_rows_missing_keys,
     empty_cleaning_log,
     log_rule,
+    log_schema_prep,
     standardize_column_names,
 )
 
@@ -47,6 +48,22 @@ def clean_weather(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
             "wind_direction",
             "rainfall",
         ],
+    )
+    log = log_schema_prep(
+        log,
+        table,
+        len(df),
+        numeric_cols=[
+            "session_key",
+            "air_temperature",
+            "track_temperature",
+            "humidity",
+            "pressure",
+            "wind_speed",
+            "wind_direction",
+            "rainfall",
+        ],
+        datetime_cols=["date", "time"],
     )
 
     df, log = drop_rows_missing_keys(

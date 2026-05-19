@@ -12,6 +12,7 @@ from openf1_pipeline.silver.cleaning_common import (
     drop_rows_missing_keys,
     empty_cleaning_log,
     log_rule,
+    log_schema_prep,
     remove_domain_invalid,
     standardize_column_names,
 )
@@ -51,6 +52,13 @@ def clean_laps(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     ]
     df = coerce_numeric(df, [c for c in numeric_cols if c in df.columns])
     df = coerce_datetime(df, ["date_start", "date"])
+    log = log_schema_prep(
+        log,
+        table,
+        len(df),
+        numeric_cols=[c for c in numeric_cols if c in df.columns],
+        datetime_cols=["date_start", "date"],
+    )
 
     df, log = drop_rows_missing_keys(
         df,

@@ -16,43 +16,17 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from openf1_pipeline.config import RANDOM_SEED
-from openf1_pipeline.gold.build_feature_mart import (
-    IDENTIFIER_COLUMNS,
-    LEAKAGE_FORBIDDEN_COLUMNS,
-    TARGET_COLUMN,
-)
+from openf1_pipeline.gold.build_feature_mart import TARGET_COLUMN
+from openf1_pipeline.modeling.feature_selection import resolve_model_feature_columns
 from openf1_pipeline.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-SOURCE_PREFIXES = ("source_",)
-
 
 def get_model_feature_columns(feature_dictionary: pd.DataFrame) -> list[str]:
-    """Select features allowed for modeling from feature dictionary CSV."""
-    if feature_dictionary.empty:
-        raise ValueError(
-            "Feature dictionary is empty. Run notebook 03 (Gold) to generate feature_dictionary.csv."
-        )
-    allowed = feature_dictionary.loc[
-        feature_dictionary["allowed_for_modeling"] == True, "feature_name"  # noqa: E712
-    ].tolist()
-    excluded = IDENTIFIER_COLUMNS | LEAKAGE_FORBIDDEN_COLUMNS | {TARGET_COLUMN}
-    cols = []
-    for col in allowed:
-        if col in excluded:
-            continue
-        if col.startswith("diagnostic_"):
-            continue
-        if any(col.startswith(p) for p in SOURCE_PREFIXES):
-            continue
-        cols.append(col)
-    if not cols:
-        raise ValueError(
-            "No model feature columns available after applying feature_dictionary "
-            "and leakage exclusions. Re-run Gold (notebook 03) and check "
-            "gold_leakage_guard_report.csv."
-        )
+    """Select default model features (plan CSV preferred, else feature dictionary)."""
+    cols = resolve_model_feature_columns(feature_dictionary=feature_dictionary)
+    logger.info("Resolved %s model feature columns", len(cols))
     return cols
 
 

@@ -1,0 +1,29 @@
+table_name,column_name,method,lower_bound,upper_bound,outlier_count,outlier_pct,min_value,max_value,report_type,stage,rule,invalid_count,invalid_pct
+laps,lap_duration,iqr,90.05,102.394,131.0,6.45,91.632,193.712,iqr,before,,,
+laps,lap_number,,,,,,,,domain,before,lap_number <= 0,0.0,0.0
+laps,lap_duration,,,,,,,,domain,before,lap_duration <= 0,0.0,0.0
+laps,duration_sector_1,,,,,,,,domain,before,duration_sector_1 <= 0,0.0,0.0
+laps,duration_sector_2,,,,,,,,domain,before,duration_sector_2 <= 0,0.0,0.0
+laps,duration_sector_3,,,,,,,,domain,before,duration_sector_3 <= 0,0.0,0.0
+pit,pit_duration,iqr,21.125,27.325,10.0,16.129,20.1,74.7,iqr,before,,,
+pit,lap_number,,,,,,,,domain,before,lap_number <= 0,0.0,0.0
+pit,pit_duration,,,,,,,,domain,before,pit_duration <= 0,0.0,0.0
+weather,air_temperature,iqr,7.25,36.45,0.0,0.0,17.6,25.9,iqr,before,,,
+weather,track_temperature,iqr,11.375,43.575,0.0,0.0,21.9,33.6,iqr,before,,,
+position,position,,,,,,,,domain,before,position <= 0,0.0,0.0
+session_result,position,,,,,,,,domain,before,position <= 0,0.0,0.0
+session_result,points,,,,,,,,domain,before,points < 0,0.0,0.0
+laps,lap_duration,iqr,90.05,102.394,131.0,6.45,91.632,193.712,iqr,after,,,
+laps,lap_number,,,,,,,,domain,after,lap_number <= 0,0.0,0.0
+laps,lap_duration,,,,,,,,domain,after,lap_duration <= 0,0.0,0.0
+laps,duration_sector_1,,,,,,,,domain,after,duration_sector_1 <= 0,0.0,0.0
+laps,duration_sector_2,,,,,,,,domain,after,duration_sector_2 <= 0,0.0,0.0
+laps,duration_sector_3,,,,,,,,domain,after,duration_sector_3 <= 0,0.0,0.0
+pit,pit_duration,iqr,21.125,27.325,10.0,16.129,20.1,74.7,iqr,after,,,
+pit,lap_number,,,,,,,,domain,after,lap_number <= 0,0.0,0.0
+pit,pit_duration,,,,,,,,domain,after,pit_duration <= 0,0.0,0.0
+weather,air_temperature,iqr,7.25,36.45,0.0,0.0,17.6,25.9,iqr,after,,,
+weather,track_temperature,iqr,11.375,43.575,0.0,0.0,21.9,33.6,iqr,after,,,
+position,position,,,,,,,,domain,after,position <= 0,0.0,0.0
+session_result,position,,,,,,,,domain,after,position <= 0,0.0,0.0
+session_result,points,,,,,,,,domain,after,points < 0,0.0,0.0

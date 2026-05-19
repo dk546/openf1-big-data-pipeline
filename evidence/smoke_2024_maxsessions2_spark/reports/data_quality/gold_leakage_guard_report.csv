@@ -1,0 +1,63 @@
+column_name,leakage_risk,allowed_for_modeling,reason
+session_key,none,False,identifier key
+meeting_key,none,False,identifier key
+driver_number,none,False,identifier key
+result_dnf,high,False,post-race outcome or diagnostic field
+result_dns,high,False,post-race outcome or diagnostic field
+result_dsq,high,False,post-race outcome or diagnostic field
+points_finish,target,False,model target
+final_position,high,False,post-race outcome or diagnostic field
+result_points,high,False,post-race outcome or diagnostic field
+full_name,low,False,metadata; encode explicitly if used in modeling
+name_acronym,low,False,metadata; encode explicitly if used in modeling
+team_name,low,False,metadata; encode explicitly if used in modeling
+driver_country_code,low,False,metadata; encode explicitly if used in modeling
+session_type,low,False,metadata; encode explicitly if used in modeling
+session_name,low,False,metadata; encode explicitly if used in modeling
+circuit_short_name,low,False,metadata; encode explicitly if used in modeling
+location,low,False,metadata; encode explicitly if used in modeling
+session_year,low,False,metadata; encode explicitly if used in modeling
+session_country_name,low,False,metadata; encode explicitly if used in modeling
+meeting_name,low,False,metadata; encode explicitly if used in modeling
+circuit_key,low,False,metadata; encode explicitly if used in modeling
+lap_count,low,True,engineered pre-race or in-race feature
+avg_lap_duration,low,True,engineered pre-race or in-race feature
+median_lap_duration,low,True,engineered pre-race or in-race feature
+best_lap_duration,low,True,engineered pre-race or in-race feature
+std_lap_duration,low,True,engineered pre-race or in-race feature
+avg_sector_1,low,True,engineered pre-race or in-race feature
+avg_sector_2,low,True,engineered pre-race or in-race feature
+avg_sector_3,low,True,engineered pre-race or in-race feature
+avg_i1_speed,low,True,engineered pre-race or in-race feature
+avg_i2_speed,low,True,engineered pre-race or in-race feature
+avg_st_speed,low,True,engineered pre-race or in-race feature
+pit_out_lap_count,low,True,engineered pre-race or in-race feature
+avg_first5_lap_duration,low,True,engineered pre-race or in-race feature
+best_first5_lap_duration,low,True,engineered pre-race or in-race feature
+std_first5_lap_duration,low,True,engineered pre-race or in-race feature
+pit_stop_count,low,True,engineered pre-race or in-race feature
+avg_pit_duration,low,True,engineered pre-race or in-race feature
+min_pit_duration,low,True,engineered pre-race or in-race feature
+max_pit_duration,low,True,engineered pre-race or in-race feature
+first_pit_lap,low,True,engineered pre-race or in-race feature
+early_pit_stop_flag,low,True,engineered pre-race or in-race feature
+first_observed_position,low,True,engineered pre-race or in-race feature
+early_avg_position,low,True,engineered pre-race or in-race feature
+early_min_position,low,True,engineered pre-race or in-race feature
+early_max_position,low,True,engineered pre-race or in-race feature
+position_observation_count,low,True,engineered pre-race or in-race feature
+diagnostic_final_observed_position,high,False,post-race outcome or diagnostic field
+avg_air_temperature,low,True,engineered pre-race or in-race feature
+avg_track_temperature,low,True,engineered pre-race or in-race feature
+avg_humidity,low,True,engineered pre-race or in-race feature
+avg_pressure,low,True,engineered pre-race or in-race feature
+avg_wind_speed,low,True,engineered pre-race or in-race feature
+rainfall_mean,low,True,engineered pre-race or in-race feature
+rainfall_flag,low,True,engineered pre-race or in-race feature
+race_control_message_count,low,True,engineered pre-race or in-race feature
+flag_message_count,low,True,engineered pre-race or in-race feature
+yellow_flag_count,low,True,engineered pre-race or in-race feature
+red_flag_count,low,True,engineered pre-race or in-race feature
+green_flag_count,low,True,engineered pre-race or in-race feature
+safety_car_message_count,low,True,engineered pre-race or in-race feature
+pit_exit_message_count,low,True,engineered pre-race or in-race feature

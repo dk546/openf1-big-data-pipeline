@@ -1,0 +1,11 @@
+table_name,row_count,column_count
+meetings,25,19
+sessions,123,16
+drivers,40,13
+laps,2031,17
+pit,62,9
+weather,303,11
+position,927,6
+race_control,139,12
+session_result,40,12
+starting_grid,0,7

@@ -11,6 +11,7 @@ from openf1_pipeline.silver.cleaning_common import (
     drop_rows_missing_keys,
     empty_cleaning_log,
     log_rule,
+    log_schema_prep,
     standardize_column_names,
 )
 
@@ -35,6 +36,12 @@ def clean_meetings(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     df = standardize_column_names(df)
     df = coerce_numeric(df, ["year", "meeting_key", "circuit_key", "country_key"])
+    log = log_schema_prep(
+        log,
+        table,
+        len(df),
+        numeric_cols=["year", "meeting_key", "circuit_key", "country_key"],
+    )
 
     if "meeting_key" in df.columns:
         df, log = drop_rows_missing_keys(

@@ -63,6 +63,55 @@ def log_rule(
     return pd.concat([log, pd.DataFrame([row])], ignore_index=True)
 
 
+def log_schema_prep(
+    log: pd.DataFrame,
+    table_name: str,
+    row_count: int,
+    *,
+    numeric_cols: list[str] | None = None,
+    datetime_cols: list[str] | None = None,
+) -> pd.DataFrame:
+    """Log non-row-changing schema steps (rename, cast) for audit granularity."""
+    log = log_rule(
+        log,
+        table_name=table_name,
+        rule_id="SIL_RENAME",
+        rule_description="Standardize column names to snake_case",
+        rows_before=row_count,
+        rows_after=row_count,
+        columns_affected="*",
+        severity="low",
+        rationale="Schema consistency for joins and downstream reports",
+    )
+    if numeric_cols:
+        log = log_rule(
+            log,
+            table_name=table_name,
+            rule_id="SIL_CAST_NUM",
+            rule_description="Cast numeric fields",
+            rows_before=row_count,
+            rows_after=row_count,
+            columns_affected=",".join(numeric_cols),
+            severity="low",
+            rationale="Typed columns for domain checks and aggregates",
+        )
+    if datetime_cols:
+        present = [c for c in datetime_cols if c]
+        if present:
+            log = log_rule(
+                log,
+                table_name=table_name,
+                rule_id="SIL_CAST_TS",
+                rule_description="Parse datetime fields to UTC timestamps",
+                rows_before=row_count,
+                rows_after=row_count,
+                columns_affected=",".join(present),
+                severity="low",
+                rationale="Enable temporal anomaly checks and session-boundary joins",
+            )
+    return log
+
+
 def log_rejection(
     rejected: list[dict[str, Any]],
     table_name: str,

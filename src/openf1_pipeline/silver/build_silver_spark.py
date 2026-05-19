@@ -20,7 +20,11 @@ from openf1_pipeline.silver.build_silver import (
     build_cleaning_impact_summary,
     discover_bronze_jsonl_by_endpoint,
 )
-from openf1_pipeline.silver.cleaning_common import REJECTED_SUMMARY_COLUMNS
+from openf1_pipeline.quality.silver_dq_notes import (
+    build_rejected_records_summary,
+    build_silver_data_quality_notes,
+)
+from openf1_pipeline.silver.cleaning_common import CLEANING_LOG_COLUMNS
 from openf1_pipeline.utils.io import ensure_dir, save_dataframe_csv
 from openf1_pipeline.utils.logging import get_logger
 from openf1_pipeline.utils.spark import (
@@ -32,17 +36,6 @@ from openf1_pipeline.utils.spark import (
 )
 
 logger = get_logger(__name__)
-
-CLEANING_LOG_COLUMNS = [
-    "table_name",
-    "rule_id",
-    "rule_description",
-    "rows_before",
-    "rows_after",
-    "rows_removed",
-    "severity",
-    "rationale",
-]
 
 
 def _silver_empty_schemas():
@@ -131,6 +124,9 @@ def _rule_log(
     rows_after: int,
     severity: str = "medium",
     rationale: str = "",
+    *,
+    values_imputed: int = 0,
+    columns_affected: str = "",
 ) -> dict[str, Any]:
     return {
         "table_name": table,
@@ -139,9 +135,42 @@ def _rule_log(
         "rows_before": rows_before,
         "rows_after": rows_after,
         "rows_removed": rows_before - rows_after,
+        "values_imputed": values_imputed,
+        "columns_affected": columns_affected,
         "severity": severity,
         "rationale": rationale,
     }
+
+
+def _spark_step(
+    logs: list[dict[str, Any]],
+    sdf: DataFrame,
+    table: str,
+    rule_id: str,
+    description: str,
+    transform,
+    *,
+    columns_affected: str = "",
+    severity: str = "medium",
+    rationale: str = "",
+) -> DataFrame:
+    """Apply one cleaning transform and append a granular rule log row."""
+    before = sdf.count()
+    sdf = transform(sdf)
+    after = sdf.count()
+    logs.append(
+        _rule_log(
+            table,
+            rule_id,
+            description,
+            before,
+            after,
+            severity,
+            rationale,
+            columns_affected=columns_affected,
+        )
+    )
+    return sdf
 
 
 def _snake_columns(sdf: DataFrame) -> DataFrame:
@@ -160,12 +189,14 @@ def _cast_cols(sdf: DataFrame, cols: list[str], dtype: str = "double") -> DataFr
 
 
 def _drop_null_keys(sdf: DataFrame, keys: list[str]) -> DataFrame:
+    present = [k for k in keys if k in sdf.columns]
+    if not present:
+        return sdf
     cond = None
-    for k in keys:
-        if k in sdf.columns:
-            c = F.col(k).isNotNull()
-            cond = c if cond is None else (cond & c)
-    return sdf.filter(cond) if cond is not None else sdf
+    for k in present:
+        c = F.col(k).isNotNull()
+        cond = c if cond is None else (cond & c)
+    return sdf.filter(cond)
 
 
 def _dedupe_exact(sdf: DataFrame) -> DataFrame:
@@ -198,55 +229,140 @@ def clean_meetings_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]
     spark = sdf.sparkSession
     if sdf is None or sdf.rdd.isEmpty():
         return _empty_df(spark, table), [_rule_log(table, "SIL_EMPTY", "No Bronze meetings", 0, 0)]
-    before = sdf.count()
-    sdf = _snake_columns(sdf)
-    sdf = _cast_cols(sdf, ["meeting_key", "year"], "long")
-    if "meeting_key" in sdf.columns:
-        sdf = _drop_null_keys(sdf, ["meeting_key"])
-    sdf = _dedupe_exact(sdf)
-    sdf = _dedupe_keys(sdf, ["meeting_key"])
-    after = sdf.count()
-    logs.append(_rule_log(table, "SIL_MEETINGS", "Meetings cleaning", before, after))
+    num_cols = ["meeting_key", "year"]
+    sdf = _spark_step(
+        logs, sdf, table, "SIL_RENAME", "Standardize column names to snake_case", _snake_columns
+    )
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_CAST_NUM",
+        "Cast meeting_key and year to long",
+        lambda d: _cast_cols(d, num_cols, "long"),
+        columns_affected=",".join(num_cols),
+    )
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DROP_NULL_KEYS",
+        "Drop rows with null meeting_key",
+        lambda d: _drop_null_keys(d, ["meeting_key"]),
+        columns_affected="meeting_key",
+        severity="high",
+        rationale="Meeting grain requires meeting_key",
+    )
+    sdf = _spark_step(
+        logs, sdf, table, "SIL_DUP_FULL", "Remove exact duplicate rows", _dedupe_exact, severity="medium"
+    )
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DUP_KEY",
+        "Deduplicate on meeting_key",
+        lambda d: _dedupe_keys(d, ["meeting_key"]),
+        columns_affected="meeting_key",
+        severity="high",
+    )
     return sdf, logs
 
 
 def clean_sessions_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "sessions"
+    logs: list[dict[str, Any]] = []
     if sdf is None or sdf.rdd.isEmpty():
         return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze sessions", 0, 0)]
-    before = sdf.count()
-    sdf = _snake_columns(sdf)
-    sdf = _cast_cols(sdf, ["session_key", "meeting_key", "year"], "long")
-    for dc in ("date_start", "date_end"):
-        if dc in sdf.columns:
-            sdf = sdf.withColumn(dc, F.to_timestamp(F.col(dc)))
-    sdf = _drop_null_keys(sdf, ["session_key"])
-    sdf = _dedupe_exact(sdf)
-    sdf = _dedupe_keys(sdf, ["session_key"])
-    after = sdf.count()
-    return sdf, [_rule_log(table, "SIL_SESSIONS", "Sessions cleaning", before, after)]
+    num_cols = ["session_key", "meeting_key", "year"]
+    ts_cols = ["date_start", "date_end"]
+
+    def _cast_sessions(d: DataFrame) -> DataFrame:
+        out = _cast_cols(d, num_cols, "long")
+        for dc in ts_cols:
+            if dc in out.columns:
+                out = out.withColumn(dc, F.to_timestamp(F.col(dc)))
+        return out
+
+    sdf = _spark_step(logs, sdf, table, "SIL_RENAME", "Standardize column names to snake_case", _snake_columns)
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_CAST_SCHEMA",
+        "Cast keys to long and session dates to timestamp",
+        _cast_sessions,
+        columns_affected=",".join(num_cols + ts_cols),
+    )
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DROP_NULL_KEYS",
+        "Drop rows with null session_key",
+        lambda d: _drop_null_keys(d, ["session_key"]),
+        columns_affected="session_key",
+        severity="high",
+    )
+    sdf = _spark_step(logs, sdf, table, "SIL_DUP_FULL", "Remove exact duplicate rows", _dedupe_exact)
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DUP_KEY",
+        "Deduplicate on session_key",
+        lambda d: _dedupe_keys(d, ["session_key"]),
+        columns_affected="session_key",
+        severity="high",
+    )
+    return sdf, logs
 
 
 def clean_drivers_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "drivers"
+    logs: list[dict[str, Any]] = []
     if sdf is None or sdf.rdd.isEmpty():
         return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze drivers", 0, 0)]
-    before = sdf.count()
-    sdf = _snake_columns(sdf)
-    sdf = _cast_cols(sdf, ["session_key", "driver_number", "meeting_key"], "long")
-    sdf = _drop_null_keys(sdf, ["session_key", "driver_number"])
-    sdf = _dedupe_exact(sdf)
-    sdf = _dedupe_keys(sdf, ["session_key", "driver_number"])
-    after = sdf.count()
-    return sdf, [_rule_log(table, "SIL_DRIVERS", "Drivers cleaning", before, after)]
+    key_cols = ["session_key", "driver_number", "meeting_key"]
+    sdf = _spark_step(logs, sdf, table, "SIL_RENAME", "Standardize column names to snake_case", _snake_columns)
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_CAST_NUM",
+        "Cast driver and session keys to long",
+        lambda d: _cast_cols(d, key_cols, "long"),
+        columns_affected=",".join(key_cols),
+    )
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DROP_NULL_KEYS",
+        "Drop rows with null session_key or driver_number",
+        lambda d: _drop_null_keys(d, ["session_key", "driver_number"]),
+        columns_affected="session_key,driver_number",
+        severity="high",
+    )
+    sdf = _spark_step(logs, sdf, table, "SIL_DUP_FULL", "Remove exact duplicate rows", _dedupe_exact)
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DUP_KEY",
+        "Deduplicate on session_key and driver_number",
+        lambda d: _dedupe_keys(d, ["session_key", "driver_number"]),
+        columns_affected="session_key,driver_number",
+        severity="high",
+    )
+    return sdf, logs
 
 
 def clean_laps_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "laps"
+    logs: list[dict[str, Any]] = []
     if sdf is None or sdf.rdd.isEmpty():
         return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze laps", 0, 0)]
-    before = sdf.count()
-    sdf = _snake_columns(sdf)
     num_cols = [
         "session_key",
         "driver_number",
@@ -257,92 +373,267 @@ def clean_laps_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
         "duration_sector_2",
         "duration_sector_3",
     ]
-    sdf = _cast_cols(sdf, [c for c in num_cols if c in sdf.columns])
-    sdf = _drop_null_keys(sdf, ["session_key", "driver_number", "lap_number"])
+    sdf = _spark_step(logs, sdf, table, "SIL_RENAME", "Standardize column names to snake_case", _snake_columns)
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_CAST_NUM",
+        "Cast lap timing and key fields to numeric types",
+        lambda d: _cast_cols(d, [c for c in num_cols if c in d.columns]),
+        columns_affected=",".join(num_cols),
+    )
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DROP_NULL_KEYS",
+        "Drop rows missing session_key, driver_number, or lap_number",
+        lambda d: _drop_null_keys(d, ["session_key", "driver_number", "lap_number"]),
+        columns_affected="session_key,driver_number,lap_number",
+        severity="high",
+        rationale="Lap grain requires session, driver, and lap number",
+    )
     if "lap_number" in sdf.columns:
-        sdf = sdf.filter(F.col("lap_number") > 0)
-    for col in ("lap_duration", "duration"):
-        if col in sdf.columns:
-            sdf = sdf.filter((F.col(col).isNull()) | (F.col(col) > 0))
-    sdf = _dedupe_exact(sdf)
-    sdf = _dedupe_keys(sdf, ["session_key", "driver_number", "lap_number"])
-    after = sdf.count()
-    return sdf, [_rule_log(table, "SIL_LAPS", "Laps cleaning", before, after)]
+        sdf = _spark_step(
+            logs,
+            sdf,
+            table,
+            "SIL_LAP_NUM_POS",
+            "Remove lap_number <= 0",
+            lambda d: d.filter(F.col("lap_number") > 0),
+            columns_affected="lap_number",
+            severity="high",
+            rationale="Lap index must be positive",
+        )
+
+    def _filter_positive_duration(d: DataFrame) -> DataFrame:
+        out = d
+        for col in ("lap_duration", "duration"):
+            if col in out.columns:
+                out = out.filter((F.col(col).isNull()) | (F.col(col) > 0))
+        return out
+
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_LAP_DUR_POS",
+        "Remove non-null lap_duration or duration <= 0",
+        _filter_positive_duration,
+        columns_affected="lap_duration,duration",
+        severity="high",
+        rationale="Recorded lap time must be positive when present",
+    )
+    sdf = _spark_step(logs, sdf, table, "SIL_DUP_FULL", "Remove exact duplicate rows", _dedupe_exact)
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DUP_KEY",
+        "Deduplicate on session_key, driver_number, lap_number",
+        lambda d: _dedupe_keys(d, ["session_key", "driver_number", "lap_number"]),
+        columns_affected="session_key,driver_number,lap_number",
+        severity="high",
+    )
+    return sdf, logs
 
 
 def clean_pit_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "pit"
+    logs: list[dict[str, Any]] = []
     if sdf is None or sdf.rdd.isEmpty():
         return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze pit", 0, 0)]
-    before = sdf.count()
-    sdf = _snake_columns(sdf)
-    sdf = _cast_cols(
-        sdf, ["session_key", "driver_number", "lap_number", "pit_duration", "lane_duration"]
+    cast_cols = ["session_key", "driver_number", "lap_number", "pit_duration", "lane_duration"]
+    dedupe_keys = ["session_key", "driver_number", "lap_number"]
+    sdf = _spark_step(logs, sdf, table, "SIL_RENAME", "Standardize column names to snake_case", _snake_columns)
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_CAST_NUM",
+        "Cast pit keys and duration fields to numeric types",
+        lambda d: _cast_cols(d, cast_cols),
+        columns_affected=",".join(cast_cols),
     )
-    sdf = _drop_null_keys(sdf, ["session_key", "driver_number"])
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DROP_NULL_KEYS",
+        "Drop rows with null session_key or driver_number",
+        lambda d: _drop_null_keys(d, ["session_key", "driver_number"]),
+        columns_affected="session_key,driver_number",
+        severity="high",
+    )
     if "lap_number" in sdf.columns:
-        sdf = sdf.filter((F.col("lap_number").isNull()) | (F.col("lap_number") > 0))
-    keys = ["session_key", "driver_number", "lap_number"]
-    sdf = _dedupe_exact(sdf)
-    sdf = _dedupe_keys(sdf, [k for k in keys if k in sdf.columns])
-    after = sdf.count()
-    return sdf, [_rule_log(table, "SIL_PIT", "Pit cleaning", before, after)]
+        sdf = _spark_step(
+            logs,
+            sdf,
+            table,
+            "SIL_PIT_LAP_POS",
+            "Remove non-null lap_number <= 0",
+            lambda d: d.filter((F.col("lap_number").isNull()) | (F.col("lap_number") > 0)),
+            columns_affected="lap_number",
+            severity="high",
+        )
+    sdf = _spark_step(logs, sdf, table, "SIL_DUP_FULL", "Remove exact duplicate rows", _dedupe_exact)
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DUP_KEY",
+        "Deduplicate on session_key, driver_number, lap_number when present",
+        lambda d: _dedupe_keys(d, [k for k in dedupe_keys if k in d.columns]),
+        columns_affected=",".join(dedupe_keys),
+        severity="high",
+    )
+    return sdf, logs
 
 
 def clean_weather_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "weather"
+    logs: list[dict[str, Any]] = []
     if sdf is None or sdf.rdd.isEmpty():
         return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze weather", 0, 0)]
-    before = sdf.count()
-    sdf = _snake_columns(sdf)
-    sdf = _cast_cols(
+    num_cols = [
+        "session_key",
+        "air_temperature",
+        "track_temperature",
+        "humidity",
+        "pressure",
+        "rainfall",
+    ]
+
+    def _cast_weather(d: DataFrame) -> DataFrame:
+        out = _cast_cols(d, num_cols)
+        if "date" in out.columns:
+            out = out.withColumn("date", F.to_timestamp(F.col("date")))
+        return out
+
+    sdf = _spark_step(logs, sdf, table, "SIL_RENAME", "Standardize column names to snake_case", _snake_columns)
+    sdf = _spark_step(
+        logs,
         sdf,
-        ["session_key", "air_temperature", "track_temperature", "humidity", "pressure", "rainfall"],
+        table,
+        "SIL_CAST_SCHEMA",
+        "Cast weather measures and parse date to timestamp",
+        _cast_weather,
+        columns_affected=",".join(num_cols + ["date"]),
     )
-    if "date" in sdf.columns:
-        sdf = sdf.withColumn("date", F.to_timestamp(F.col("date")))
-    sdf = _drop_null_keys(sdf, ["session_key"])
-    sdf = _dedupe_exact(sdf)
-    after = sdf.count()
-    return sdf, [_rule_log(table, "SIL_WEATHER", "Weather cleaning", before, after)]
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DROP_NULL_KEYS",
+        "Drop rows with null session_key",
+        lambda d: _drop_null_keys(d, ["session_key"]),
+        columns_affected="session_key",
+        severity="high",
+    )
+    sdf = _spark_step(logs, sdf, table, "SIL_DUP_FULL", "Remove exact duplicate rows", _dedupe_exact)
+    return sdf, logs
 
 
 def clean_position_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "position"
+    logs: list[dict[str, Any]] = []
     if sdf is None or sdf.rdd.isEmpty():
         return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze position", 0, 0)]
-    before = sdf.count()
-    sdf = _snake_columns(sdf)
-    sdf = _cast_cols(sdf, ["session_key", "driver_number", "position", "meeting_key"], "long")
-    if "date" in sdf.columns:
-        sdf = sdf.withColumn("date", F.to_timestamp(F.col("date")))
-    sdf = _drop_null_keys(sdf, ["session_key", "driver_number"])
+    num_cols = ["session_key", "driver_number", "position", "meeting_key"]
+
+    def _cast_position(d: DataFrame) -> DataFrame:
+        out = _cast_cols(d, num_cols, "long")
+        if "date" in out.columns:
+            out = out.withColumn("date", F.to_timestamp(F.col("date")))
+        return out
+
+    sdf = _spark_step(logs, sdf, table, "SIL_RENAME", "Standardize column names to snake_case", _snake_columns)
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_CAST_SCHEMA",
+        "Cast position keys and parse observation date to timestamp",
+        _cast_position,
+        columns_affected=",".join(num_cols + ["date"]),
+    )
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DROP_NULL_KEYS",
+        "Drop rows with null session_key or driver_number",
+        lambda d: _drop_null_keys(d, ["session_key", "driver_number"]),
+        columns_affected="session_key,driver_number",
+        severity="high",
+    )
     if "position" in sdf.columns:
-        sdf = sdf.filter((F.col("position").isNull()) | (F.col("position") > 0))
-    sdf = _dedupe_exact(sdf)
+        sdf = _spark_step(
+            logs,
+            sdf,
+            table,
+            "SIL_POS_POSITIVE",
+            "Remove non-null position <= 0",
+            lambda d: d.filter((F.col("position").isNull()) | (F.col("position") > 0)),
+            columns_affected="position",
+            severity="high",
+        )
+    sdf = _spark_step(logs, sdf, table, "SIL_DUP_FULL", "Remove exact duplicate rows", _dedupe_exact)
     if all(k in sdf.columns for k in ("session_key", "driver_number", "date")):
-        sdf = _dedupe_keys(sdf, ["session_key", "driver_number", "date"])
-    after = sdf.count()
-    return sdf, [_rule_log(table, "SIL_POSITION", "Position cleaning", before, after)]
+        sdf = _spark_step(
+            logs,
+            sdf,
+            table,
+            "SIL_DUP_KEY",
+            "Deduplicate on session_key, driver_number, date",
+            lambda d: _dedupe_keys(d, ["session_key", "driver_number", "date"]),
+            columns_affected="session_key,driver_number,date",
+            severity="high",
+        )
+    return sdf, logs
 
 
 def clean_race_control_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "race_control"
+    logs: list[dict[str, Any]] = []
     if sdf is None or sdf.rdd.isEmpty():
         return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze race_control", 0, 0)]
-    before = sdf.count()
-    sdf = _snake_columns(sdf)
-    sdf = _cast_cols(sdf, ["session_key", "meeting_key"], "long")
-    if "date" in sdf.columns:
-        sdf = sdf.withColumn("date", F.to_timestamp(F.col("date")))
-    sdf = _drop_null_keys(sdf, ["session_key"])
-    sdf = _dedupe_exact(sdf)
-    after = sdf.count()
-    return sdf, [_rule_log(table, "SIL_RACE_CONTROL", "Race control cleaning", before, after)]
+    num_cols = ["session_key", "meeting_key"]
+
+    def _cast_rc(d: DataFrame) -> DataFrame:
+        out = _cast_cols(d, num_cols, "long")
+        if "date" in out.columns:
+            out = out.withColumn("date", F.to_timestamp(F.col("date")))
+        return out
+
+    sdf = _spark_step(logs, sdf, table, "SIL_RENAME", "Standardize column names to snake_case", _snake_columns)
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_CAST_SCHEMA",
+        "Cast keys and parse message date to timestamp",
+        _cast_rc,
+        columns_affected=",".join(num_cols + ["date"]),
+    )
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DROP_NULL_KEYS",
+        "Drop rows with null session_key",
+        lambda d: _drop_null_keys(d, ["session_key"]),
+        columns_affected="session_key",
+        severity="high",
+    )
+    sdf = _spark_step(logs, sdf, table, "SIL_DUP_FULL", "Remove exact duplicate rows", _dedupe_exact)
+    return sdf, logs
 
 
 def clean_session_result_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "session_result"
+    logs: list[dict[str, Any]] = []
     if sdf is None or sdf.rdd.isEmpty():
         return _empty_df(sdf.sparkSession, table), [
             _rule_log(
@@ -355,44 +646,99 @@ def clean_session_result_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str
                 "Required for Gold target",
             )
         ]
-    before = sdf.count()
-    sdf = _snake_columns(sdf)
-    sdf = _cast_cols(
+    cast_cols = [
+        "session_key",
+        "driver_number",
+        "position",
+        "points",
+        "number_of_laps",
+        "meeting_key",
+    ]
+    sdf = _spark_step(logs, sdf, table, "SIL_RENAME", "Standardize column names to snake_case", _snake_columns)
+    sdf = _spark_step(
+        logs,
         sdf,
-        ["session_key", "driver_number", "position", "points", "number_of_laps", "meeting_key"],
-        "long",
+        table,
+        "SIL_CAST_NUM",
+        "Cast result keys and outcome fields to long",
+        lambda d: _cast_cols(d, cast_cols, "long"),
+        columns_affected=",".join(cast_cols),
     )
-    sdf = _drop_null_keys(sdf, ["session_key", "driver_number"])
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DROP_NULL_KEYS",
+        "Drop rows with null session_key or driver_number",
+        lambda d: _drop_null_keys(d, ["session_key", "driver_number"]),
+        columns_affected="session_key,driver_number",
+        severity="high",
+        rationale="Driver-session grain required for Gold mart",
+    )
     if "position" in sdf.columns:
-        sdf = sdf.filter((F.col("position").isNull()) | (F.col("position") > 0))
+        sdf = _spark_step(
+            logs,
+            sdf,
+            table,
+            "SIL_RES_POS_POSITIVE",
+            "Remove non-null position <= 0",
+            lambda d: d.filter((F.col("position").isNull()) | (F.col("position") > 0)),
+            columns_affected="position",
+            severity="high",
+        )
     if "points" in sdf.columns:
-        sdf = sdf.filter((F.col("points").isNull()) | (F.col("points") >= 0))
-    sdf = _dedupe_exact(sdf)
-    sdf = _dedupe_keys(sdf, ["session_key", "driver_number"])
-    after = sdf.count()
-    return sdf, [_rule_log(table, "SIL_SESSION_RESULT", "Session result cleaning", before, after)]
+        sdf = _spark_step(
+            logs,
+            sdf,
+            table,
+            "SIL_RES_POINTS_NONNEG",
+            "Remove rows with points < 0",
+            lambda d: d.filter((F.col("points").isNull()) | (F.col("points") >= 0)),
+            columns_affected="points",
+            severity="high",
+        )
+    sdf = _spark_step(logs, sdf, table, "SIL_DUP_FULL", "Remove exact duplicate rows", _dedupe_exact)
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_DUP_KEY",
+        "Deduplicate on session_key and driver_number",
+        lambda d: _dedupe_keys(d, ["session_key", "driver_number"]),
+        columns_affected="session_key,driver_number",
+        severity="high",
+    )
+    return sdf, logs
 
 
 def clean_starting_grid_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "starting_grid"
+    logs: list[dict[str, Any]] = []
     if sdf is None or sdf.rdd.isEmpty():
         return _empty_df(sdf.sparkSession, table), [
             _rule_log(
                 table,
-                "SIL_OPTIONAL_MISSING",
-                "starting_grid optional — no Bronze files or zero rows",
+                "SIL_OPTIONAL_EMPTY",
+                "Optional starting_grid — no Bronze files or zero rows",
                 0,
                 0,
                 "low",
                 "OpenF1 may return 404; empty schema Parquet written for downstream joins",
             )
         ]
-    before = sdf.count()
-    sdf = _snake_columns(sdf)
-    sdf = _cast_cols(sdf, ["session_key", "driver_number", "position"], "long")
-    sdf = _dedupe_exact(sdf)
-    after = sdf.count()
-    return sdf, [_rule_log(table, "SIL_STARTING_GRID", "Starting grid cleaning", before, after)]
+    cast_cols = ["session_key", "driver_number", "position"]
+    sdf = _spark_step(logs, sdf, table, "SIL_RENAME", "Standardize column names to snake_case", _snake_columns)
+    sdf = _spark_step(
+        logs,
+        sdf,
+        table,
+        "SIL_CAST_NUM",
+        "Cast grid keys and position to long",
+        lambda d: _cast_cols(d, cast_cols, "long"),
+        columns_affected=",".join(cast_cols),
+    )
+    sdf = _spark_step(logs, sdf, table, "SIL_DUP_FULL", "Remove exact duplicate rows", _dedupe_exact)
+    return sdf, logs
 
 
 SPARK_CLEANERS = {
@@ -564,12 +910,8 @@ def run_silver_cleaning_spark(
     referential_report = pd.concat([referential_before, referential_after], ignore_index=True)
     impact_summary = build_cleaning_impact_summary(bronze_pandas, silver_pandas)
 
-    rejected_summary = pd.DataFrame(columns=REJECTED_SUMMARY_COLUMNS)
-    if not cleaning_rules.empty and "rows_removed" in cleaning_rules.columns:
-        rejected_summary = cleaning_rules.loc[
-            cleaning_rules["rows_removed"] > 0,
-            ["table_name", "rule_id", "rule_description", "rows_removed"],
-        ].rename(columns={"rule_description": "reason", "rows_removed": "rejected_count"})
+    rejected_summary = build_rejected_records_summary(cleaning_rules, SILVER_ENDPOINT_ORDER)
+    dq_notes = build_silver_data_quality_notes()
 
     paths = {
         "silver_table_inventory": data_quality_reports_dir / "silver_table_inventory.csv",
@@ -586,6 +928,8 @@ def run_silver_cleaning_spark(
         / "silver_cleaning_impact_summary.csv",
         "silver_rejected_records_summary": data_quality_reports_dir
         / "silver_rejected_records_summary.csv",
+        "silver_data_quality_notes": data_quality_reports_dir
+        / "silver_data_quality_notes.csv",
     }
 
     save_dataframe_csv(inventory_before, paths["silver_table_inventory"])
@@ -598,6 +942,7 @@ def run_silver_cleaning_spark(
     save_dataframe_csv(cleaning_rules, paths["silver_cleaning_rules"])
     save_dataframe_csv(impact_summary, paths["silver_cleaning_impact_summary"])
     save_dataframe_csv(rejected_summary, paths["silver_rejected_records_summary"])
+    save_dataframe_csv(dq_notes, paths["silver_data_quality_notes"])
 
     summary = {
         "engine": "spark",

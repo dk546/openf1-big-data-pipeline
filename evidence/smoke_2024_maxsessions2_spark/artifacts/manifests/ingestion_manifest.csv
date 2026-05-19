@@ -1,0 +1,19 @@
+endpoint,year,session_key,output_path,record_count,status,error_message,ingestion_timestamp_utc
+meetings,2024,,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/meetings/year=2024/meetings.jsonl,25,success,,2026-05-19T14:01:45+00:00
+sessions,2024,,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/sessions/year=2024/sessions.jsonl,123,success,,2026-05-19T14:01:46+00:00
+drivers,2024,9472,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/drivers/year=2024/session_key=9472.jsonl,20,success,,2026-05-19T14:01:46+00:00
+drivers,2024,9480,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/drivers/year=2024/session_key=9480.jsonl,20,success,,2026-05-19T14:01:47+00:00
+laps,2024,9472,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/laps/year=2024/session_key=9472.jsonl,1129,success,,2026-05-19T14:01:48+00:00
+laps,2024,9480,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/laps/year=2024/session_key=9480.jsonl,902,success,,2026-05-19T14:01:48+00:00
+pit,2024,9472,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/pit/year=2024/session_key=9472.jsonl,43,success,,2026-05-19T14:01:49+00:00
+pit,2024,9480,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/pit/year=2024/session_key=9480.jsonl,19,success,,2026-05-19T14:01:49+00:00
+weather,2024,9472,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/weather/year=2024/session_key=9472.jsonl,157,success,,2026-05-19T14:01:49+00:00
+weather,2024,9480,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/weather/year=2024/session_key=9480.jsonl,146,success,,2026-05-19T14:01:50+00:00
+position,2024,9472,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/position/year=2024/session_key=9472.jsonl,698,success,,2026-05-19T14:01:50+00:00
+position,2024,9480,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/position/year=2024/session_key=9480.jsonl,229,success,,2026-05-19T14:01:50+00:00
+race_control,2024,9472,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/race_control/year=2024/session_key=9472.jsonl,71,success,,2026-05-19T14:01:51+00:00
+race_control,2024,9480,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/race_control/year=2024/session_key=9480.jsonl,68,success,,2026-05-19T14:01:52+00:00
+session_result,2024,9472,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/session_result/year=2024/session_key=9472.jsonl,20,success,,2026-05-19T14:01:52+00:00
+session_result,2024,9480,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/session_result/year=2024/session_key=9480.jsonl,20,success,,2026-05-19T14:01:52+00:00
+starting_grid,2024,9472,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/starting_grid/year=2024/session_key=9472.jsonl,0,failed,"HTTP 404 for starting_grid params={'session_key': 9472}: {""detail"":""No results found.""}",2026-05-19T14:01:53+00:00
+starting_grid,2024,9480,/content/drive/MyDrive/openf1_big_data_pipeline/data/bronze/starting_grid/year=2024/session_key=9480.jsonl,0,failed,"HTTP 404 for starting_grid params={'session_key': 9480}: {""detail"":""No results found.""}",2026-05-19T14:01:53+00:00

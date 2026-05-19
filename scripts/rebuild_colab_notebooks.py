@@ -572,10 +572,13 @@ def build_04() -> None:
     cells = [
         md("""# 04 — Modeling & Evaluation
 
+**Points-finish classification using integrated race-session features** (Tier 1 early-session + Tier 2 full-session analytical).
+
 Season-based splits, baselines, supervised models, and model result artifacts.
 
 - **Target:** `points_finish`
-- **Models:** Random baseline, heuristic (`first_observed_position` ≤ 10), Logistic Regression, Random Forest, LightGBM
+- **Default X:** 40 numeric features from `model_feature_plan.csv` (frozen)
+- **Models:** Random, majority, heuristic baselines; Logistic Regression, Random Forest, LightGBM
 - **Split:** Train 2023 · Validation 2024 · Test 2025 (season-based, no random row split)
 - **Engine:** pandas + scikit-learn + LightGBM (Gold mart handoff)
 
@@ -612,7 +615,12 @@ from openf1_pipeline.features.feature_dictionary import validate_no_leakage
 from openf1_pipeline.gold.build_feature_mart import GOLD_MART_FILENAME, TARGET_COLUMN
 from openf1_pipeline.modeling.baselines import (
     heuristic_position_baseline,
+    majority_class_baseline,
     random_baseline_predictions,
+)
+from openf1_pipeline.modeling.feature_selection import (
+    save_model_feature_plan,
+    summarize_feature_tiers,
 )
 from openf1_pipeline.modeling.evaluate import (
     build_error_analysis,
@@ -641,19 +649,21 @@ DATA_QUALITY_REPORTS_DIR = get_data_quality_reports_dir()
 
 MART_PATH = GOLD_DIR / GOLD_MART_FILENAME
 DICT_PATH = FEATURE_DEFINITIONS_DIR / "feature_dictionary.csv"
+PLAN_PATH = FEATURE_DEFINITIONS_DIR / "model_feature_plan.csv"
 LEAKAGE_PATH = DATA_QUALITY_REPORTS_DIR / "gold_leakage_guard_report.csv"
 
 print("MODELING_MODE:", MODELING_MODE)
 print("CLEAR_MODEL_OUTPUTS:", CLEAR_MODEL_OUTPUTS)
 print("MART_PATH:", MART_PATH)
-print("DICT_PATH:", DICT_PATH)"""),
+print("DICT_PATH:", DICT_PATH)
+print("PLAN_PATH:", PLAN_PATH)"""),
         md("## Clean model outputs"),
         code("""if CLEAR_MODEL_OUTPUTS:
     print("Cleaning model results...")
     clean_model_outputs(model_results_dir=MODEL_RESULTS_DIR, manifests_dir=MANIFESTS_DIR)
 else:
     print("Skipping model cleanup (CLEAR_MODEL_OUTPUTS=False).")"""),
-        md("## Load Gold mart and feature dictionary"),
+        md("## Load Gold mart, feature dictionary, and model feature plan"),
         code("""if not MART_PATH.exists():
     raise FileNotFoundError(
         f"Gold mart missing: {MART_PATH}. Run 03_gold_feature_engineering.ipynb first."
@@ -670,6 +680,14 @@ if gold_df is None or gold_df.empty:
 feature_dict = pd.read_csv(DICT_PATH)
 leakage_report = pd.read_csv(LEAKAGE_PATH) if LEAKAGE_PATH.is_file() else None
 
+if not PLAN_PATH.is_file():
+    saved = save_model_feature_plan(PLAN_PATH)
+    print("Created frozen model feature plan:", saved)
+else:
+    print("Loaded existing model feature plan:", PLAN_PATH)
+
+feature_plan = pd.read_csv(PLAN_PATH)
+tier_counts = summarize_feature_tiers(feature_plan)
 print("Gold shape:", gold_df.shape)
 print("Target rate:", gold_df[TARGET_COLUMN].mean())
 validate_no_leakage(gold_df, feature_dict)
@@ -677,6 +695,9 @@ print("Leakage guard: OK")
 if leakage_report is not None:
     blocked = leakage_report.loc[leakage_report["allowed_for_modeling"] == False]
     print(f"Leakage report: {len(blocked)} columns blocked from modeling")
+
+print("Feature plan tier counts (default_include=True):", tier_counts)
+display(feature_plan.loc[feature_plan["default_include"] == True])
 
 feature_columns = get_model_feature_columns(feature_dict)
 print(f"Selected model features ({len(feature_columns)}):")
@@ -697,7 +718,21 @@ for name, part in splits.items():
         print(f"{name}: n={len(part)}, points_finish rate={rate:.4f}, seasons={seasons}")
 
 if MODELING_MODE == "smoke":
-    print("SMOKE MODE: wiring verification only — metrics are NOT official MBA evidence.")"""),
+    print("SMOKE MODE: wiring verification only — metrics are NOT official MBA evidence.")
+elif MODELING_MODE == "full":
+    expected = {"train": {2023}, "validation": {2024}, "test": {2025}}
+    for split_name, part in splits.items():
+        if part.empty:
+            raise ValueError(
+                f"MODELING_MODE=full requires non-empty '{split_name}' split. "
+                "Run full 2023–2025 Gold ingest first."
+            )
+        seasons = set(pd.to_numeric(part["session_year"], errors="coerce").dropna().astype(int))
+        if seasons != expected[split_name]:
+            raise ValueError(
+                f"MODELING_MODE=full: split '{split_name}' seasons {seasons} != {expected[split_name]}"
+            )
+    print("FULL MODE: season splits 2023/2024/2025 verified — metrics may be used as official evidence.")"""),
         md("## Baselines"),
         code("""X_train, y_train = prepare_model_matrix(train_df, feature_columns)
 X_val, y_val = prepare_model_matrix(val_df, feature_columns)
@@ -724,6 +759,15 @@ for split_name, eval_df, y_true in [
         build_error_analysis(eval_df, y_true, rand_pred, rand_proba, "random_baseline", split_name)
     )
 
+    maj_pred, maj_proba = majority_class_baseline(y_train, y_true)
+    baseline_rows.append(
+        compute_classification_metrics(y_true, maj_pred, maj_proba, "majority_baseline", split_name)
+    )
+    cm_parts.append(compute_confusion_matrix_table(y_true, maj_pred, "majority_baseline", split_name))
+    error_parts.append(
+        build_error_analysis(eval_df, y_true, maj_pred, maj_proba, "majority_baseline", split_name)
+    )
+
     heur_pred, heur_proba = heuristic_position_baseline(eval_df)
     baseline_rows.append(
         compute_classification_metrics(y_true, heur_pred, heur_proba, "heuristic_position", split_name)
@@ -734,6 +778,8 @@ for split_name, eval_df, y_true in [
     )
 
 baseline_metrics = pd.DataFrame(baseline_rows)
+if MODELING_MODE == "smoke":
+    print("SMOKE OUTPUT: baseline metrics below are wiring checks only.")
 display(baseline_metrics)"""),
         md("## Train supervised models"),
         code("""model_specs = {
@@ -788,7 +834,9 @@ display(test_metrics)"""),
         "random_seed": RANDOM_SEED,
         "target": TARGET_COLUMN,
         "feature_count": len(feature_columns),
+        "feature_tier_counts": tier_counts,
         "models": list(fitted_models.keys()),
+        "baselines": ["random_baseline", "majority_baseline", "heuristic_position"],
     },
 )
 output_paths"""),

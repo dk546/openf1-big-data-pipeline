@@ -29,7 +29,11 @@ from openf1_pipeline.silver.clean_session_result import clean_session_result
 from openf1_pipeline.silver.clean_sessions import clean_sessions
 from openf1_pipeline.silver.clean_starting_grid import clean_starting_grid
 from openf1_pipeline.silver.clean_weather import clean_weather
-from openf1_pipeline.silver.cleaning_common import REJECTED_SUMMARY_COLUMNS
+from openf1_pipeline.quality.silver_dq_notes import (
+    build_rejected_records_summary,
+    build_silver_data_quality_notes,
+)
+from openf1_pipeline.silver.cleaning_common import CLEANING_LOG_COLUMNS
 from openf1_pipeline.utils.io import ensure_dir, save_dataframe_csv, save_dataframe_parquet
 from openf1_pipeline.utils.logging import get_logger
 
@@ -200,16 +204,7 @@ def run_silver_cleaning_pandas(
     cleaning_rules = (
         pd.concat(cleaning_logs, ignore_index=True)
         if cleaning_logs
-        else pd.DataFrame(
-            columns=[
-                "table_name",
-                "rule_id",
-                "rule_description",
-                "rows_before",
-                "rows_after",
-                "rows_removed",
-            ]
-        )
+        else pd.DataFrame(columns=CLEANING_LOG_COLUMNS)
     )
 
     # Post-cleaning audits
@@ -230,20 +225,8 @@ def run_silver_cleaning_pandas(
 
     impact_summary = build_cleaning_impact_summary(bronze_tables, silver_tables)
 
-    rejected_summary = pd.DataFrame(columns=REJECTED_SUMMARY_COLUMNS)
-    if not cleaning_rules.empty and "rows_removed" in cleaning_rules.columns:
-        rejected_from_rules = cleaning_rules.loc[
-            cleaning_rules["rows_removed"] > 0,
-            ["table_name", "rule_id", "rule_description", "rows_removed"],
-        ].rename(
-            columns={
-                "rule_description": "reason",
-                "rows_removed": "rejected_count",
-            }
-        )
-        rejected_summary = pd.concat(
-            [rejected_summary, rejected_from_rules], ignore_index=True
-        )
+    rejected_summary = build_rejected_records_summary(cleaning_rules, SILVER_ENDPOINT_ORDER)
+    dq_notes = build_silver_data_quality_notes()
 
     paths = {
         "silver_table_inventory": data_quality_reports_dir / "silver_table_inventory.csv",
@@ -260,6 +243,8 @@ def run_silver_cleaning_pandas(
         / "silver_cleaning_impact_summary.csv",
         "silver_rejected_records_summary": data_quality_reports_dir
         / "silver_rejected_records_summary.csv",
+        "silver_data_quality_notes": data_quality_reports_dir
+        / "silver_data_quality_notes.csv",
     }
 
     save_dataframe_csv(inventory_before, paths["silver_table_inventory"])
@@ -272,6 +257,7 @@ def run_silver_cleaning_pandas(
     save_dataframe_csv(cleaning_rules, paths["silver_cleaning_rules"])
     save_dataframe_csv(impact_summary, paths["silver_cleaning_impact_summary"])
     save_dataframe_csv(rejected_summary, paths["silver_rejected_records_summary"])
+    save_dataframe_csv(dq_notes, paths["silver_data_quality_notes"])
 
     summary = {
         "tables_loaded": len(bronze_tables),

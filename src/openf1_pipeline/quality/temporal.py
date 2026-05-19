@@ -107,7 +107,8 @@ def detect_temporal_anomalies(
             "weather_outside_session_bounds",
             "date",
             outside,
-            "Weather timestamp outside session start/end (when boundaries available)",
+            "Non-blocking: weather timestamp outside session start/end — often API sampling "
+            "or session-boundary timing (see silver_data_quality_notes.csv)",
         )
 
     return pd.DataFrame(rows) if rows else pd.DataFrame(columns=columns_out)

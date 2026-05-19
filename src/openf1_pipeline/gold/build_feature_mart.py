@@ -541,7 +541,7 @@ def build_leakage_guard_report(gold_df: pd.DataFrame) -> pd.DataFrame:
                     "column_name": col,
                     "leakage_risk": "low",
                     "allowed_for_modeling": True,
-                    "reason": "engineered pre-race or in-race feature",
+                    "reason": "engineered session feature; see feature tier in model_feature_plan",
                 }
             )
     return pd.DataFrame(rows)

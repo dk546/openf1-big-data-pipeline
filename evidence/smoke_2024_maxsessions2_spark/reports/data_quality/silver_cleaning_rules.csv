@@ -1,0 +1,11 @@
+table_name,rule_id,rule_description,rows_before,rows_after,rows_removed,severity,rationale
+meetings,SIL_MEETINGS,Meetings cleaning,25,25,0,medium,
+sessions,SIL_SESSIONS,Sessions cleaning,123,123,0,medium,
+drivers,SIL_DRIVERS,Drivers cleaning,40,40,0,medium,
+laps,SIL_LAPS,Laps cleaning,2031,2031,0,medium,
+pit,SIL_PIT,Pit cleaning,62,62,0,medium,
+weather,SIL_WEATHER,Weather cleaning,303,303,0,medium,
+position,SIL_POSITION,Position cleaning,927,927,0,medium,
+race_control,SIL_RACE_CONTROL,Race control cleaning,139,139,0,medium,
+session_result,SIL_SESSION_RESULT,Session result cleaning,40,40,0,medium,
+starting_grid,SIL_OPTIONAL_MISSING,starting_grid optional — no Bronze files or zero rows,0,0,0,low,OpenF1 may return 404; empty schema Parquet written for downstream joins

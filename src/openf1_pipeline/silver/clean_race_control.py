@@ -10,6 +10,7 @@ from openf1_pipeline.silver.cleaning_common import (
     drop_rows_missing_keys,
     empty_cleaning_log,
     log_rule,
+    log_schema_prep,
     standardize_column_names,
 )
 
@@ -34,6 +35,7 @@ def clean_race_control(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     df = standardize_column_names(df)
     df = coerce_datetime(df, ["date", "time"])
+    log = log_schema_prep(log, table, len(df), datetime_cols=["date", "time"])
 
     df, log = drop_rows_missing_keys(
         df,

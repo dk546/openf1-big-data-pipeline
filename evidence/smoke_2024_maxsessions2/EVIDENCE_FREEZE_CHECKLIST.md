@@ -33,7 +33,8 @@ Use this checklist when copying **official Colab smoke** outputs from Google Dri
 - [ ] `silver_referential_integrity_report.csv`
 - [ ] `silver_cleaning_rules.csv`
 - [ ] `silver_cleaning_impact_summary.csv`
-- [ ] `silver_rejected_records_summary.csv` (may be empty if no rows removed)
+- [ ] `silver_rejected_records_summary.csv` (10 template rows when no rejections, or one row per rejection rule)
+- [ ] `silver_data_quality_notes.csv` (structural missingness and temporal check documentation)
 
 ## Silver — optional
 

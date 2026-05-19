@@ -11,6 +11,7 @@ from openf1_pipeline.silver.cleaning_common import (
     drop_rows_missing_keys,
     empty_cleaning_log,
     log_rule,
+    log_schema_prep,
     standardize_column_names,
 )
 
@@ -38,6 +39,12 @@ def clean_starting_grid(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     if "grid_position" not in df.columns and "position" in df.columns:
         df["grid_position"] = df["position"]
     df = coerce_numeric(df, ["session_key", "driver_number", "position", "grid_position"])
+    log = log_schema_prep(
+        log,
+        table,
+        len(df),
+        numeric_cols=["session_key", "driver_number", "position", "grid_position"],
+    )
 
     df, log = drop_rows_missing_keys(
         df,
