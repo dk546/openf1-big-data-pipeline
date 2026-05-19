@@ -685,8 +685,14 @@ def build_gold_feature_mart(
     feature_definitions_dir: Path,
     engine: str = "spark",
     spark=None,
+    allow_fallback: bool = False,
 ) -> dict[str, Any]:
-    """Build Gold mart (Spark by default; pandas fallback)."""
+    """
+    Build Gold mart (Spark by default).
+
+    When ``allow_fallback=False`` (recommended in Colab), Spark failures are raised
+    immediately instead of partially writing Spark Parquet dirs then colliding with pandas.
+    """
     if engine == "spark":
         try:
             from openf1_pipeline.gold.build_feature_mart_spark import build_gold_feature_mart_spark
@@ -701,7 +707,23 @@ def build_gold_feature_mart(
                 feature_definitions_dir,
             )
         except Exception as exc:
-            logger.warning("Gold Spark engine failed; falling back to pandas: %s", exc)
+            if not allow_fallback:
+                raise RuntimeError(
+                    "Gold Spark engine failed with allow_fallback=False. "
+                    f"Clean {gold_dir} and fix the Spark error before retrying. "
+                    f"Original error: {exc}"
+                ) from exc
+            logger.warning(
+                "Gold Spark engine failed; allow_fallback=True — cleaning Gold layer then pandas: %s",
+                exc,
+            )
+            from openf1_pipeline.utils.cleanup import clean_gold_layer_outputs
+
+            clean_gold_layer_outputs(
+                gold_dir=gold_dir,
+                data_quality_reports_dir=data_quality_reports_dir,
+                feature_definitions_dir=feature_definitions_dir,
+            )
     return build_gold_feature_mart_pandas(
         silver_dir, gold_dir, data_quality_reports_dir, feature_definitions_dir
     )

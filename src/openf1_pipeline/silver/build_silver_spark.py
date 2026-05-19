@@ -27,6 +27,7 @@ from openf1_pipeline.utils.spark import (
     read_spark_jsonl,
     safe_to_pandas,
     spark_path,
+    write_empty_parquet_with_schema,
     write_spark_dataframe,
 )
 
@@ -42,6 +43,84 @@ CLEANING_LOG_COLUMNS = [
     "severity",
     "rationale",
 ]
+
+
+def _silver_empty_schemas():
+    """Minimal schemas for empty Silver Parquet writes (Spark rejects zero-column frames)."""
+    from pyspark.sql.types import LongType, StringType, StructField, StructType
+
+    long = LongType()
+    s = StringType()
+
+    return {
+        "meetings": StructType([StructField("meeting_key", long, True)]),
+        "sessions": StructType(
+            [
+                StructField("session_key", long, True),
+                StructField("meeting_key", long, True),
+            ]
+        ),
+        "drivers": StructType(
+            [
+                StructField("session_key", long, True),
+                StructField("driver_number", long, True),
+            ]
+        ),
+        "laps": StructType(
+            [
+                StructField("session_key", long, True),
+                StructField("driver_number", long, True),
+                StructField("lap_number", long, True),
+            ]
+        ),
+        "pit": StructType(
+            [
+                StructField("session_key", long, True),
+                StructField("driver_number", long, True),
+            ]
+        ),
+        "weather": StructType([StructField("session_key", long, True)]),
+        "position": StructType(
+            [
+                StructField("session_key", long, True),
+                StructField("driver_number", long, True),
+            ]
+        ),
+        "race_control": StructType([StructField("session_key", long, True)]),
+        "session_result": StructType(
+            [
+                StructField("session_key", long, True),
+                StructField("driver_number", long, True),
+            ]
+        ),
+        "starting_grid": StructType(
+            [
+                StructField("session_key", long, True),
+                StructField("meeting_key", long, True),
+                StructField("driver_number", long, True),
+                StructField("position", long, True),
+                StructField("source_endpoint", s, True),
+                StructField("source_year", long, True),
+                StructField("source_session_key", long, True),
+            ]
+        ),
+    }
+
+
+SILVER_EMPTY_SCHEMAS = _silver_empty_schemas()
+
+
+def _empty_df(spark: SparkSession, endpoint: str) -> DataFrame:
+    schema = SILVER_EMPTY_SCHEMAS[endpoint]
+    return spark.createDataFrame([], schema)
+
+
+def _write_silver_table(spark: SparkSession, sdf: DataFrame, path: Path, endpoint: str) -> None:
+    schema = SILVER_EMPTY_SCHEMAS[endpoint]
+    if len(sdf.columns) == 0:
+        write_empty_parquet_with_schema(spark, path, schema)
+    else:
+        write_spark_dataframe(sdf, path, empty_schema=schema, spark=spark)
 
 
 def _rule_log(
@@ -113,17 +192,12 @@ def load_bronze_endpoint_spark(
     return sdf.withColumn("source_file", F.input_file_name())
 
 
-def _empty_df(spark: SparkSession) -> DataFrame:
-    from pyspark.sql.types import StructType
-
-    return spark.createDataFrame([], StructType())
-
-
 def clean_meetings_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "meetings"
     logs: list[dict[str, Any]] = []
+    spark = sdf.sparkSession
     if sdf is None or sdf.rdd.isEmpty():
-        return _empty_df(sdf.sparkSession), [_rule_log(table, "SIL_EMPTY", "No Bronze meetings", 0, 0)]
+        return _empty_df(spark, table), [_rule_log(table, "SIL_EMPTY", "No Bronze meetings", 0, 0)]
     before = sdf.count()
     sdf = _snake_columns(sdf)
     sdf = _cast_cols(sdf, ["meeting_key", "year"], "long")
@@ -139,7 +213,7 @@ def clean_meetings_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]
 def clean_sessions_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "sessions"
     if sdf is None or sdf.rdd.isEmpty():
-        return _empty_df(sdf.sparkSession), [_rule_log(table, "SIL_EMPTY", "No Bronze sessions", 0, 0)]
+        return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze sessions", 0, 0)]
     before = sdf.count()
     sdf = _snake_columns(sdf)
     sdf = _cast_cols(sdf, ["session_key", "meeting_key", "year"], "long")
@@ -156,7 +230,7 @@ def clean_sessions_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]
 def clean_drivers_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "drivers"
     if sdf is None or sdf.rdd.isEmpty():
-        return _empty_df(sdf.sparkSession), [_rule_log(table, "SIL_EMPTY", "No Bronze drivers", 0, 0)]
+        return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze drivers", 0, 0)]
     before = sdf.count()
     sdf = _snake_columns(sdf)
     sdf = _cast_cols(sdf, ["session_key", "driver_number", "meeting_key"], "long")
@@ -170,7 +244,7 @@ def clean_drivers_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]
 def clean_laps_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "laps"
     if sdf is None or sdf.rdd.isEmpty():
-        return _empty_df(sdf.sparkSession), [_rule_log(table, "SIL_EMPTY", "No Bronze laps", 0, 0)]
+        return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze laps", 0, 0)]
     before = sdf.count()
     sdf = _snake_columns(sdf)
     num_cols = [
@@ -199,7 +273,7 @@ def clean_laps_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
 def clean_pit_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "pit"
     if sdf is None or sdf.rdd.isEmpty():
-        return _empty_df(sdf.sparkSession), [_rule_log(table, "SIL_EMPTY", "No Bronze pit", 0, 0)]
+        return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze pit", 0, 0)]
     before = sdf.count()
     sdf = _snake_columns(sdf)
     sdf = _cast_cols(
@@ -218,7 +292,7 @@ def clean_pit_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
 def clean_weather_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "weather"
     if sdf is None or sdf.rdd.isEmpty():
-        return _empty_df(sdf.sparkSession), [_rule_log(table, "SIL_EMPTY", "No Bronze weather", 0, 0)]
+        return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze weather", 0, 0)]
     before = sdf.count()
     sdf = _snake_columns(sdf)
     sdf = _cast_cols(
@@ -236,7 +310,7 @@ def clean_weather_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]
 def clean_position_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "position"
     if sdf is None or sdf.rdd.isEmpty():
-        return _empty_df(sdf.sparkSession), [_rule_log(table, "SIL_EMPTY", "No Bronze position", 0, 0)]
+        return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze position", 0, 0)]
     before = sdf.count()
     sdf = _snake_columns(sdf)
     sdf = _cast_cols(sdf, ["session_key", "driver_number", "position", "meeting_key"], "long")
@@ -255,7 +329,7 @@ def clean_position_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]
 def clean_race_control_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "race_control"
     if sdf is None or sdf.rdd.isEmpty():
-        return _empty_df(sdf.sparkSession), [_rule_log(table, "SIL_EMPTY", "No Bronze race_control", 0, 0)]
+        return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze race_control", 0, 0)]
     before = sdf.count()
     sdf = _snake_columns(sdf)
     sdf = _cast_cols(sdf, ["session_key", "meeting_key"], "long")
@@ -270,7 +344,7 @@ def clean_race_control_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, 
 def clean_session_result_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "session_result"
     if sdf is None or sdf.rdd.isEmpty():
-        return _empty_df(sdf.sparkSession), [
+        return _empty_df(sdf.sparkSession, table), [
             _rule_log(
                 table,
                 "SIL_EMPTY",
@@ -302,15 +376,15 @@ def clean_session_result_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str
 def clean_starting_grid_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     table = "starting_grid"
     if sdf is None or sdf.rdd.isEmpty():
-        return _empty_df(sdf.sparkSession), [
+        return _empty_df(sdf.sparkSession, table), [
             _rule_log(
                 table,
-                "SIL_OPTIONAL",
-                "starting_grid optional/empty",
+                "SIL_OPTIONAL_MISSING",
+                "starting_grid optional — no Bronze files or zero rows",
                 0,
                 0,
                 "low",
-                "API may return 404",
+                "OpenF1 may return 404; empty schema Parquet written for downstream joins",
             )
         ]
     before = sdf.count()
@@ -427,7 +501,7 @@ def run_silver_cleaning_spark(
         if sdf is not None:
             bronze_spark[endpoint] = sdf
         else:
-            bronze_spark[endpoint] = _empty_df(spark)
+            bronze_spark[endpoint] = _empty_df(spark, endpoint)
 
     missingness_before = pd.concat(
         [spark_missingness(sdf, ep) for ep, sdf in bronze_spark.items()],
@@ -441,17 +515,14 @@ def run_silver_cleaning_spark(
     for endpoint in SILVER_ENDPOINT_ORDER:
         raw = bronze_spark.get(endpoint)
         if raw is None:
-            silver_spark[endpoint] = _empty_df(spark)
-            write_spark_dataframe(silver_spark[endpoint], silver_dir / f"{endpoint}_clean.parquet")
+            silver_spark[endpoint] = _empty_df(spark, endpoint)
+            _write_silver_table(spark, silver_spark[endpoint], silver_dir / f"{endpoint}_clean.parquet", endpoint)
             continue
         cleaned, logs = SPARK_CLEANERS[endpoint](raw)
         silver_spark[endpoint] = cleaned
         all_logs.extend(logs)
         out = silver_dir / f"{endpoint}_clean.parquet"
-        if cleaned.rdd.isEmpty():
-            write_spark_dataframe(cleaned, out)
-        else:
-            write_spark_dataframe(cleaned, out)
+        _write_silver_table(spark, cleaned, out, endpoint)
         logger.info("Silver Spark saved %s (%s rows)", endpoint, cleaned.count())
 
     cleaning_rules = pd.DataFrame(all_logs) if all_logs else pd.DataFrame(columns=CLEANING_LOG_COLUMNS)

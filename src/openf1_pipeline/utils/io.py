@@ -22,6 +22,68 @@ def ensure_dir(path: Path) -> Path:
     return path
 
 
+def _matches_keep_pattern(name: str, keep_patterns: list[str] | None) -> bool:
+    if not keep_patterns:
+        return False
+    import fnmatch
+
+    return any(fnmatch.fnmatch(name, pattern) for pattern in keep_patterns)
+
+
+def clean_directory_contents(path: Path, keep_patterns: list[str] | None = None) -> int:
+    """
+    Remove all files and subdirectories inside ``path`` (not the root folder itself).
+
+    Handles Spark Parquet directories. Missing folder is created empty.
+    """
+    import shutil
+
+    path = Path(path)
+    if not path.exists():
+        ensure_dir(path)
+        return 0
+
+    removed = 0
+    for item in path.iterdir():
+        if _matches_keep_pattern(item.name, keep_patterns):
+            continue
+        if item.is_dir():
+            shutil.rmtree(item)
+        else:
+            item.unlink()
+        removed += 1
+    logger.info("Cleaned directory contents %s (%s items removed)", path, removed)
+    return removed
+
+
+def ensure_clean_output_dir(path: Path, keep_patterns: list[str] | None = None) -> Path:
+    """Create ``path`` if missing, then remove its contents."""
+    path = Path(path)
+    ensure_dir(path)
+    clean_directory_contents(path, keep_patterns=keep_patterns)
+    return path
+
+
+def clean_files_matching(directory: Path, patterns: list[str]) -> int:
+    """Remove files in ``directory`` matching any glob pattern (non-recursive by default)."""
+    import fnmatch
+
+    directory = Path(directory)
+    if not directory.is_dir():
+        return 0
+
+    removed = 0
+    for item in directory.iterdir():
+        if not item.is_file():
+            continue
+        if any(fnmatch.fnmatch(item.name, pattern) for pattern in patterns):
+            item.unlink()
+            removed += 1
+    if removed:
+        logger.info("Removed %s files matching %s from %s", removed, patterns, directory)
+    return removed
+
+
 def save_jsonl(records: list[dict[str, Any]], output_path: Path) -> int:
     """Write one JSON object per line (UTF-8). Returns rows written."""
     output_path = Path(output_path)

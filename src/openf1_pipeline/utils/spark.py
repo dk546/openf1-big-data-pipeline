@@ -59,14 +59,40 @@ def spark_path(path: Path | str) -> str:
     return str(Path(path).resolve()).replace("\\", "/")
 
 
+def write_empty_parquet_with_schema(
+    spark: SparkSession,
+    path: Path | str,
+    schema,
+    mode: str = "overwrite",
+) -> None:
+    """Write an empty Parquet dataset with an explicit schema (Spark cannot write zero-column frames)."""
+    out = Path(path)
+    ensure_dir(out.parent)
+    empty = spark.createDataFrame([], schema)
+    empty.write.mode(mode).parquet(spark_path(out))
+    logger.info("Wrote empty Parquet with schema -> %s", out)
+
+
 def write_spark_dataframe(
     df: DataFrame,
     path: Path | str,
     mode: str = "overwrite",
+    *,
+    empty_schema=None,
+    spark: SparkSession | None = None,
 ) -> None:
-    """Write a Spark DataFrame as Parquet."""
+    """Write a Spark DataFrame as Parquet; use empty_schema when df has no columns."""
     out = Path(path)
     ensure_dir(out.parent)
+    if len(df.columns) == 0:
+        if empty_schema is None:
+            raise ValueError(
+                f"Cannot write empty DataFrame with no schema to {out}. "
+                "Provide empty_schema or use write_empty_parquet_with_schema()."
+            )
+        session = spark or df.sparkSession
+        write_empty_parquet_with_schema(session, out, empty_schema, mode=mode)
+        return
     df.write.mode(mode).parquet(spark_path(out))
 
 

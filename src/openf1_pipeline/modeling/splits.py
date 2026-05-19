@@ -59,6 +59,56 @@ def create_season_split(
     return splits
 
 
+def resolve_modeling_splits(
+    df: pd.DataFrame,
+    mode: str = "full",
+    season_col: str = "session_year",
+) -> tuple[dict[str, pd.DataFrame], dict[str, str]]:
+    """
+    Resolve train/validation/test splits for modeling.
+
+    Returns (splits, metadata) where metadata includes split_method and evidence_tier.
+
+    - ``full``: season split; raises if any split is empty.
+    - ``smoke``: season split when possible; otherwise deterministic time fallback.
+    """
+    mode = mode.lower().strip()
+    if mode not in ("full", "smoke"):
+        raise ValueError(f"Unknown modeling mode: {mode!r}. Use 'full' or 'smoke'.")
+
+    splits = create_season_split(df, season_col=season_col)
+    all_empty = all(part.empty for part in splits.values())
+    any_empty = any(part.empty for part in splits.values())
+
+    if mode == "full":
+        empty_names = [name for name, part in splits.items() if part.empty]
+        if empty_names:
+            raise ValueError(
+                "Full modeling mode requires non-empty train, validation, and test splits. "
+                f"Empty splits: {empty_names}. Re-run ingestion for 2023–2025 or use mode='smoke'."
+            )
+        return splits, {
+            "split_method": "season",
+            "evidence_tier": "mba_official",
+        }
+
+    # smoke mode
+    if not any_empty and not all_empty:
+        return splits, {
+            "split_method": "season",
+            "evidence_tier": "smoke_wiring_only",
+        }
+
+    logger.warning(
+        "Smoke mode: season splits unusable (empty splits present) — using deterministic time fallback."
+    )
+    fallback = create_fallback_time_split(df)
+    return fallback, {
+        "split_method": "smoke_fallback",
+        "evidence_tier": "smoke_wiring_only",
+    }
+
+
 def create_fallback_time_split(
     df: pd.DataFrame,
     date_col: str | None = None,

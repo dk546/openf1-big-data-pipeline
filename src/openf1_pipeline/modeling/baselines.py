@@ -8,6 +8,9 @@ import numpy as np
 import pandas as pd
 
 from openf1_pipeline.config import RANDOM_SEED
+from openf1_pipeline.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def random_baseline_predictions(
@@ -36,11 +39,22 @@ def heuristic_position_baseline(
     Predict points_finish = 1 if first_observed_position <= threshold; else 0.
     Missing first_observed_position → predict 0.
     """
+    n = len(df)
     if "first_observed_position" not in df.columns:
-        n = len(df)
+        logger.warning(
+            "Heuristic baseline: first_observed_position missing — predicting all zeros (%s rows).",
+            n,
+        )
         return np.zeros(n, dtype=int), np.zeros(n, dtype=float)
 
     pos = pd.to_numeric(df["first_observed_position"], errors="coerce")
+    if pos.notna().sum() == 0:
+        logger.warning(
+            "Heuristic baseline: first_observed_position all null — predicting all zeros (%s rows).",
+            n,
+        )
+        return np.zeros(n, dtype=int), np.zeros(n, dtype=float)
+
     y_pred = np.where(pos.notna() & (pos <= threshold), 1, 0).astype(int)
     y_proba = y_pred.astype(float)
     return y_pred, y_proba

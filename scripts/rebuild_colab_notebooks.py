@@ -213,9 +213,23 @@ SMOKE_TEST = True
 MAX_SESSIONS = 2 if SMOKE_TEST else None
 INGEST_SEASONS = [2024] if SMOKE_TEST else SEASONS
 
+# WARNING: CLEAR_BRONZE_OUTPUTS=True deletes all Bronze JSONL and re-ingests from API (slow).
+CLEAR_BRONZE_OUTPUTS = False
+BRONZE_REPORT_ENGINE = "spark"
+ALLOW_FALLBACK = False
+
 print(f"SMOKE_TEST={SMOKE_TEST}, seasons={INGEST_SEASONS}, max_sessions={MAX_SESSIONS}")
+print(f"CLEAR_BRONZE_OUTPUTS={CLEAR_BRONZE_OUTPUTS}, ALLOW_FALLBACK={ALLOW_FALLBACK}")
 if not SMOKE_TEST:
     print("WARNING: Full ingestion may take a long time. Ensure USE_GOOGLE_DRIVE=True above.")"""),
+        md("## Optional: clean Bronze outputs"),
+        code("""from openf1_pipeline.utils.cleanup import clean_bronze_layer_outputs
+
+if CLEAR_BRONZE_OUTPUTS:
+    print("WARNING: Deleting Bronze data and Bronze reports — re-ingestion required.")
+    clean_bronze_layer_outputs()
+else:
+    print("Skipping Bronze cleanup (CLEAR_BRONZE_OUTPUTS=False).")"""),
         md("## Run Bronze ingestion"),
         code("""manifest_df = run_bronze_ingestion(
     seasons=INGEST_SEASONS,
@@ -243,14 +257,13 @@ if manifest_summary["session_result_total_rows"] == 0 and not SMOKE_TEST:
     print("WARNING: session_result has zero rows — check manifest before Silver/Gold.")
 manifest_df.groupby(["endpoint", "status"]).size().unstack(fill_value=0)"""),
         md("## Generate Bronze evidence reports (Spark-first)"),
-        code("""BRONZE_REPORT_ENGINE = "spark"  # fallback: "pandas"
-
-report_result = generate_bronze_reports(
+        code("""report_result = generate_bronze_reports(
     bronze_dir=get_bronze_dir(),
     data_quality_reports_dir=get_data_quality_reports_dir(),
     schemas_dir=get_schemas_dir(),
     engine=BRONZE_REPORT_ENGINE,
     spark=spark,
+    allow_fallback=ALLOW_FALLBACK,
 )
 report_result"""),
         md("## DuckDB validation (Bronze CSV evidence)"),
@@ -288,7 +301,7 @@ def build_02() -> None:
 
 Bronze JSONL → **Spark** Silver Parquet + DQ reports + **DuckDB** validation. **No Gold. No modeling.**
 
-- Primary engine: **PySpark** (`SILVER_ENGINE = "spark"`). Pandas fallback optional.
+- Primary engine: **PySpark** (`SILVER_ENGINE = "spark"`). Spark is the official engine; pandas fallback is available only manually (`allow_fallback=True`) and must not be triggered silently.
 - Event absence ≠ missing data (e.g. no pit rows → handled in Gold).
 - Outliers flagged; only domain-invalid values removed.
 - Run after Bronze with the **same** `USE_GOOGLE_DRIVE` setting as notebook 01."""),
@@ -312,8 +325,11 @@ from openf1_pipeline.config import (
     get_silver_dir,
 )
 from openf1_pipeline.silver.build_silver import run_silver_cleaning
+from openf1_pipeline.utils.cleanup import clean_silver_layer_outputs
 
-SILVER_ENGINE = "spark"  # fallback: "pandas"
+SILVER_ENGINE = "spark"  # manual fallback only: "pandas" with allow_fallback=True
+ALLOW_FALLBACK = False
+CLEAR_SILVER_OUTPUTS = True
 
 BRONZE_DIR = get_bronze_dir()
 SILVER_DIR = get_silver_dir()
@@ -338,6 +354,15 @@ if not jsonl_files:
         f"Bronze data not found at {BRONZE_DIR}. "
         "Run 01_ingestion_bronze.ipynb first with the same USE_GOOGLE_DRIVE setting."
     )"""),
+        md("""## Clean Silver outputs (required before fresh Spark run)
+
+Removes prior Spark Parquet **directories**, Silver DQ CSVs, and DuckDB Silver reports.
+Does not delete Bronze data."""),
+        code("""if CLEAR_SILVER_OUTPUTS:
+    print("Cleaning Silver layer outputs...")
+    clean_silver_layer_outputs(silver_dir=SILVER_DIR, data_quality_reports_dir=DATA_QUALITY_REPORTS_DIR)
+else:
+    print("Skipping Silver cleanup (CLEAR_SILVER_OUTPUTS=False).")"""),
         md("## Run Silver cleaning (Spark-first)"),
         code("""outputs = run_silver_cleaning(
     bronze_dir=BRONZE_DIR,
@@ -345,6 +370,7 @@ if not jsonl_files:
     data_quality_reports_dir=DATA_QUALITY_REPORTS_DIR,
     engine=SILVER_ENGINE,
     spark=spark,
+    allow_fallback=ALLOW_FALLBACK,
 )
 outputs["summary"]"""),
         md("## DuckDB validation (Silver Parquet)"),
@@ -392,7 +418,7 @@ def build_03() -> None:
 
 Build the **driver-race feature mart** from Silver Parquet using **PySpark** + **DuckDB** validation.
 
-- **Engine:** `GOLD_ENGINE = "spark"` (pandas fallback optional)
+- **Engine:** `GOLD_ENGINE = "spark"`. Spark is the official engine; pandas fallback is manual only (`allow_fallback=True`).
 - **Grain:** one row per `session_key`, `meeting_key`, `driver_number`
 - **Base:** `session_result_clean.parquet`
 - **Target:** `points_finish` = 1 if `points` > 0, else 0
@@ -430,8 +456,12 @@ from openf1_pipeline.config import (
     get_silver_dir,
 )
 from openf1_pipeline.gold.build_feature_mart import build_gold_feature_mart
+from openf1_pipeline.utils.io import read_parquet_if_exists
+from openf1_pipeline.utils.cleanup import clean_gold_layer_outputs
 
-GOLD_ENGINE = "spark"  # fallback: "pandas"
+GOLD_ENGINE = "spark"
+ALLOW_FALLBACK = False
+CLEAR_GOLD_OUTPUTS = True
 
 SILVER_DIR = get_silver_dir()
 GOLD_DIR = get_gold_dir()
@@ -455,11 +485,24 @@ for path in required:
 
 starting_grid = SILVER_DIR / "starting_grid_clean.parquet"
 if starting_grid.exists():
-    sg = pd.read_parquet(starting_grid)
-    if sg.empty:
+    sg = read_parquet_if_exists(starting_grid)
+    if sg is not None and sg.empty:
         print("WARNING: starting_grid_clean.parquet is empty — grid features skipped.")
 else:
     print("NOTE: starting_grid_clean.parquet not found (optional).")"""),
+        md("""## Clean Gold outputs (required before fresh Spark run)
+
+Removes Gold Parquet, Gold DQ reports, DuckDB Gold reports, and feature dictionary.
+Does not delete Silver."""),
+        code("""if CLEAR_GOLD_OUTPUTS:
+    print("Cleaning Gold layer outputs...")
+    clean_gold_layer_outputs(
+        gold_dir=GOLD_DIR,
+        data_quality_reports_dir=DATA_QUALITY_REPORTS_DIR,
+        feature_definitions_dir=FEATURE_DEFINITIONS_DIR,
+    )
+else:
+    print("Skipping Gold cleanup (CLEAR_GOLD_OUTPUTS=False).")"""),
         md("## Build Gold feature mart (Spark-first)"),
         code("""outputs = build_gold_feature_mart(
     silver_dir=SILVER_DIR,
@@ -468,6 +511,7 @@ else:
     feature_definitions_dir=FEATURE_DEFINITIONS_DIR,
     engine=GOLD_ENGINE,
     spark=spark,
+    allow_fallback=ALLOW_FALLBACK,
 )
 
 outputs["summary"]"""),
@@ -549,6 +593,7 @@ Identical to `00`–`03`: clone, `pip install -e .`, Drive mount, set `OPENF1_DA
         code(COLAB_SETUP),
         md("## Configuration"),
         code("""MODELING_MODE = "smoke"  # "full" for official MBA season splits
+CLEAR_MODEL_OUTPUTS = True
 
 from pathlib import Path
 
@@ -556,6 +601,7 @@ import pandas as pd
 
 from openf1_pipeline.config import (
     RANDOM_SEED,
+    get_data_quality_reports_dir,
     get_feature_definitions_dir,
     get_gold_dir,
     get_manifests_dir,
@@ -574,7 +620,7 @@ from openf1_pipeline.modeling.evaluate import (
     compute_confusion_matrix_table,
     save_modeling_outputs,
 )
-from openf1_pipeline.modeling.splits import create_season_split
+from openf1_pipeline.modeling.splits import resolve_modeling_splits
 from openf1_pipeline.modeling.train import (
     build_lightgbm_pipeline,
     build_logistic_regression_pipeline,
@@ -584,19 +630,29 @@ from openf1_pipeline.modeling.train import (
     prepare_model_matrix,
     train_models,
 )
+from openf1_pipeline.utils.cleanup import clean_model_outputs
+from openf1_pipeline.utils.io import read_parquet_if_exists
 
 GOLD_DIR = get_gold_dir()
 FEATURE_DEFINITIONS_DIR = get_feature_definitions_dir()
 MODEL_RESULTS_DIR = get_model_results_dir()
 MANIFESTS_DIR = get_manifests_dir()
+DATA_QUALITY_REPORTS_DIR = get_data_quality_reports_dir()
 
 MART_PATH = GOLD_DIR / GOLD_MART_FILENAME
 DICT_PATH = FEATURE_DEFINITIONS_DIR / "feature_dictionary.csv"
-LEAKAGE_PATH = get_output_root() / "reports" / "data_quality" / "gold_leakage_guard_report.csv"
+LEAKAGE_PATH = DATA_QUALITY_REPORTS_DIR / "gold_leakage_guard_report.csv"
 
 print("MODELING_MODE:", MODELING_MODE)
+print("CLEAR_MODEL_OUTPUTS:", CLEAR_MODEL_OUTPUTS)
 print("MART_PATH:", MART_PATH)
 print("DICT_PATH:", DICT_PATH)"""),
+        md("## Clean model outputs"),
+        code("""if CLEAR_MODEL_OUTPUTS:
+    print("Cleaning model results...")
+    clean_model_outputs(model_results_dir=MODEL_RESULTS_DIR, manifests_dir=MANIFESTS_DIR)
+else:
+    print("Skipping model cleanup (CLEAR_MODEL_OUTPUTS=False).")"""),
         md("## Load Gold mart and feature dictionary"),
         code("""if not MART_PATH.exists():
     raise FileNotFoundError(
@@ -607,7 +663,10 @@ if not DICT_PATH.is_file():
         f"Feature dictionary missing: {DICT_PATH}. Run notebook 03 first."
     )
 
-gold_df = pd.read_parquet(MART_PATH)
+gold_df = read_parquet_if_exists(MART_PATH)
+if gold_df is None or gold_df.empty:
+    raise ValueError(f"Gold mart at {MART_PATH} is missing or empty.")
+
 feature_dict = pd.read_csv(DICT_PATH)
 leakage_report = pd.read_csv(LEAKAGE_PATH) if LEAKAGE_PATH.is_file() else None
 
@@ -615,35 +674,30 @@ print("Gold shape:", gold_df.shape)
 print("Target rate:", gold_df[TARGET_COLUMN].mean())
 validate_no_leakage(gold_df, feature_dict)
 print("Leakage guard: OK")
+if leakage_report is not None:
+    blocked = leakage_report.loc[leakage_report["allowed_for_modeling"] == False]
+    print(f"Leakage report: {len(blocked)} columns blocked from modeling")
 
 feature_columns = get_model_feature_columns(feature_dict)
 print(f"Selected model features ({len(feature_columns)}):")
 print(feature_columns)"""),
-        md("## Season-based split"),
-        code("""splits = create_season_split(gold_df, season_col="session_year")
+        md("## Resolve train/validation/test splits"),
+        code("""splits, split_meta = resolve_modeling_splits(gold_df, mode=MODELING_MODE)
 train_df = splits["train"]
 val_df = splits["validation"]
 test_df = splits["test"]
 
+print("Split metadata:", split_meta)
 for name, part in splits.items():
     if part.empty:
         print(f"WARNING: split '{name}' is empty")
     else:
         rate = part[TARGET_COLUMN].mean()
-        print(f"{name}: n={len(part)}, points_finish rate={rate:.4f}, seasons={sorted(part['session_year'].dropna().unique().tolist())}")
+        seasons = sorted(part["session_year"].dropna().unique().tolist()) if "session_year" in part.columns else []
+        print(f"{name}: n={len(part)}, points_finish rate={rate:.4f}, seasons={seasons}")
 
-if MODELING_MODE == "full":
-    if train_df.empty or val_df.empty or test_df.empty:
-        raise ValueError(
-            "Full modeling mode requires non-empty train, validation, and test splits. "
-            "Re-run ingestion for 2023–2025 or use MODELING_MODE='smoke'."
-        )
-elif MODELING_MODE == "smoke":
-    print("SMOKE MODE: wiring verification only — metrics are not official MBA evidence.")
-    eval_df = val_df if not val_df.empty else gold_df
-    train_df = train_df if not train_df.empty else gold_df.sample(min(len(gold_df), max(1, len(gold_df)//2)), random_state=RANDOM_SEED)
-    val_df = eval_df
-    test_df = eval_df"""),
+if MODELING_MODE == "smoke":
+    print("SMOKE MODE: wiring verification only — metrics are NOT official MBA evidence.")"""),
         md("## Baselines"),
         code("""X_train, y_train = prepare_model_matrix(train_df, feature_columns)
 X_val, y_val = prepare_model_matrix(val_df, feature_columns)
@@ -729,6 +783,8 @@ display(test_metrics)"""),
     manifests_dir=MANIFESTS_DIR,
     manifest_extra={
         "modeling_mode": MODELING_MODE,
+        "split_method": split_meta.get("split_method"),
+        "evidence_tier": split_meta.get("evidence_tier"),
         "random_seed": RANDOM_SEED,
         "target": TARGET_COLUMN,
         "feature_count": len(feature_columns),
@@ -786,6 +842,9 @@ from openf1_pipeline.reporting.report_tables import (
     build_silver_error_taxonomy_table,
     write_report_tables,
 )
+from openf1_pipeline.utils.cleanup import clean_report_artifacts
+
+CLEAR_REPORT_ARTIFACTS = True
 
 OUTPUT_ROOT = get_output_root()
 DQ_DIR = get_data_quality_reports_dir()
@@ -796,12 +855,19 @@ MANIFESTS_DIR = get_manifests_dir()
 ARTIFACTS_DIR = get_artifacts_dir()
 GOLD_DIR = get_gold_dir()
 
-TABLES_DIR.mkdir(parents=True, exist_ok=True)
-FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-
 print("OUTPUT_ROOT:", OUTPUT_ROOT)
+print("CLEAR_REPORT_ARTIFACTS:", CLEAR_REPORT_ARTIFACTS)
 print("TABLES_DIR:", TABLES_DIR)
 print("FIGURES_DIR:", FIGURES_DIR)"""),
+        md("## Clean report artifacts"),
+        code("""if CLEAR_REPORT_ARTIFACTS:
+    print("Cleaning report tables and figures...")
+    clean_report_artifacts(reports_dir=get_reports_dir())
+else:
+    print("Skipping report cleanup (CLEAR_REPORT_ARTIFACTS=False).")
+
+TABLES_DIR.mkdir(parents=True, exist_ok=True)
+FIGURES_DIR.mkdir(parents=True, exist_ok=True)"""),
         md("## Build report tables"),
         code("""gold_row_count = None
 gold_mart = GOLD_DIR / "driver_race_feature_mart.parquet"

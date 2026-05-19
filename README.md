@@ -224,6 +224,26 @@ Set `USE_GOOGLE_DRIVE=True` in each notebook. The setup cell will:
 **Smoke path:** `01` with `SMOKE_TEST=True`, `MAX_SESSIONS=2` → `02` → `03`.  
 **Full path:** re-run `01` with `SMOKE_TEST=False` (2023–2025) → `02` → `03` → `04` → `05`.
 
+### Drive output cleanup policy (idempotent reruns)
+
+Notebooks are safe to rerun on Google Drive when cleanup flags are set. Each notebook cleans **only its layer** — upstream data is preserved by default.
+
+| Notebook | Flag | Default | Cleans | Does not delete |
+|----------|------|---------|--------|-----------------|
+| 01 | `CLEAR_BRONZE_OUTPUTS` | `False` | `data/bronze/`, Bronze DQ CSVs, ingestion manifest, schemas | Silver, Gold, models |
+| 02 | `CLEAR_SILVER_OUTPUTS` | `True` | `data/silver/`, `silver_*.csv`, `duckdb_silver_*.csv` | Bronze, Gold |
+| 03 | `CLEAR_GOLD_OUTPUTS` | `True` | `data/gold/`, Gold DQ CSVs, `duckdb_gold_*.csv`, feature dictionary | Silver, model results |
+| 04 | `CLEAR_MODEL_OUTPUTS` | `True` | `reports/model_results/`, `model_run_manifest.json` | Gold, DQ reports |
+| 05 | `CLEAR_REPORT_ARTIFACTS` | `True` | `reports/tables/`, `reports/figures/` | DQ reports, model results |
+
+**Engine fallback:** `ALLOW_FALLBACK = False` in notebooks 01–03 (default). Spark is the official engine; pandas fallback is manual only and cleans the target layer first when enabled.
+
+**After a failed partial run:** Rerun notebook 02+ with cleanup flags at their defaults. If notebook 02 failed mid-Spark, `CLEAR_SILVER_OUTPUTS=True` removes partial Spark Parquet directories before retry.
+
+**Warning:** `CLEAR_BRONZE_OUTPUTS=True` deletes all Bronze JSONL and requires re-ingestion from the OpenF1 API (slow).
+
+Utilities: `openf1_pipeline.utils.cleanup` (`clean_silver_layer_outputs`, `clean_gold_layer_outputs`, etc.) and `openf1_pipeline.utils.io` (`clean_directory_contents`).
+
 ### Packaging
 
 ```bash

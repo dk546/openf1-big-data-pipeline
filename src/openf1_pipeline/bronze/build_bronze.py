@@ -404,9 +404,12 @@ def generate_bronze_reports(
     schemas_dir: Path,
     engine: str = "spark",
     spark=None,
+    allow_fallback: bool = False,
 ) -> dict[str, Any]:
     """
-    Write Bronze evidence CSVs. Default engine is Spark; pandas fallback on failure.
+    Write Bronze evidence CSVs (Spark by default).
+
+    When ``allow_fallback=False``, Spark failures raise immediately.
     """
     if engine == "spark":
         try:
@@ -417,5 +420,13 @@ def generate_bronze_reports(
                 spark, bronze_dir, data_quality_reports_dir, schemas_dir
             )
         except Exception as exc:
-            logger.warning("Bronze Spark reporting failed; falling back to pandas: %s", exc)
+            if not allow_fallback:
+                raise RuntimeError(
+                    "Bronze Spark reporting failed with allow_fallback=False. "
+                    f"Fix the Spark error before retrying. Original error: {exc}"
+                ) from exc
+            logger.warning(
+                "Bronze Spark reporting failed; allow_fallback=True — pandas fallback: %s",
+                exc,
+            )
     return generate_bronze_reports_pandas(bronze_dir, data_quality_reports_dir, schemas_dir)

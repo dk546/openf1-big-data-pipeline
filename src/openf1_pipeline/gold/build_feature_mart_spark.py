@@ -302,7 +302,15 @@ def build_gold_feature_mart_spark(
     meetings = _load_silver(spark, silver_dir, "meetings")
     session_result = _load_silver(spark, silver_dir, "session_result")
     if session_result is None:
-        raise ValueError("session_result_clean.parquet missing")
+        raise ValueError(
+            "session_result_clean.parquet missing — required for Gold target (points_finish). "
+            "Run 02_silver_cleaning_quality.ipynb first."
+        )
+    if session_result.rdd.isEmpty():
+        raise ValueError(
+            "session_result_clean.parquet is empty — cannot build Gold base table. "
+            "Re-run Bronze ingestion and Silver cleaning."
+        )
 
     base = build_target_base_spark(session_result)
     gold = base

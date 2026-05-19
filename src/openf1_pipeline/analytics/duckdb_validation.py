@@ -100,6 +100,17 @@ def _glob_parquet(path: Path) -> str:
     return str(p / "**" / "*.parquet").replace("\\", "/")
 
 
+def _parquet_readable(con: duckdb.DuckDBPyConnection, glob: str) -> tuple[int | None, str | None]:
+    """Return row count if Parquet is readable; otherwise (None, error_message)."""
+    try:
+        n = con.execute(
+            f"SELECT COUNT(*) AS row_count FROM read_parquet('{glob}')"
+        ).fetchone()[0]
+        return int(n), None
+    except Exception as exc:
+        return None, str(exc)
+
+
 def save_duckdb_validation_reports(
     reports: dict[str, pd.DataFrame],
     output_dir: Path,
@@ -206,18 +217,20 @@ def validate_silver_with_duckdb(silver_dir: Path) -> dict[str, pd.DataFrame]:
             inventory_rows.append({"table_name": name, "row_count": 0, "status": "missing"})
             continue
         glob = _glob_parquet(pq)
+        row_count, err = _parquet_readable(con, glob)
+        if err is not None:
+            inventory_rows.append(
+                {"table_name": name, "row_count": 0, "status": f"error: {err}"}
+            )
+            continue
+        inventory_rows.append({"table_name": name, "row_count": row_count, "status": "ok"})
         try:
-            n = con.execute(
-                f"SELECT COUNT(*) AS row_count FROM read_parquet('{glob}')"
-            ).fetchone()[0]
-            inventory_rows.append({"table_name": name, "row_count": n, "status": "ok"})
             con.execute(
                 f"CREATE OR REPLACE VIEW {name} AS SELECT * FROM read_parquet('{glob}')"
             )
         except Exception as exc:
-            inventory_rows.append(
-                {"table_name": name, "row_count": 0, "status": f"error: {exc}"}
-            )
+            inventory_rows[-1]["status"] = f"error: {exc}"
+            continue
 
     reports["silver_row_counts"] = pd.DataFrame(inventory_rows)
     ok_tables = {r["table_name"] for r in inventory_rows if r.get("status") == "ok"}

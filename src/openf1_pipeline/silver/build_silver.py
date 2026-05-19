@@ -79,6 +79,17 @@ def discover_bronze_jsonl_by_endpoint(bronze_dir: Path) -> dict[str, list[Path]]
     return result
 
 
+def clean_silver_output_dir(silver_dir: Path) -> None:
+    """
+    Remove all files and Parquet directories under Silver output dir.
+
+    Deprecated: prefer ``clean_silver_layer_outputs`` from ``utils.cleanup``.
+    """
+    from openf1_pipeline.utils.cleanup import clean_silver_layer_outputs
+
+    clean_silver_layer_outputs(silver_dir=silver_dir)
+
+
 def load_bronze_tables(bronze_dir: Path) -> dict[str, pd.DataFrame]:
     """Load all Bronze endpoints into pandas DataFrames."""
     tables: dict[str, pd.DataFrame] = {}
@@ -294,8 +305,14 @@ def run_silver_cleaning(
     data_quality_reports_dir: Path,
     engine: str = "spark",
     spark=None,
+    allow_fallback: bool = False,
 ) -> dict[str, Any]:
-    """Run Silver cleaning (Spark by default; pandas fallback)."""
+    """
+    Run Silver cleaning (Spark by default).
+
+    When ``allow_fallback=False`` (recommended in Colab), Spark failures are raised
+    immediately instead of partially writing Spark Parquet dirs then colliding with pandas.
+    """
     if engine == "spark":
         try:
             from openf1_pipeline.silver.build_silver_spark import run_silver_cleaning_spark
@@ -306,5 +323,17 @@ def run_silver_cleaning(
                 spark, bronze_dir, silver_dir, data_quality_reports_dir
             )
         except Exception as exc:
-            logger.warning("Silver Spark engine failed; falling back to pandas: %s", exc)
+            if not allow_fallback:
+                raise RuntimeError(
+                    "Silver Spark engine failed with allow_fallback=False. "
+                    f"Clean {silver_dir} and fix the Spark error before retrying. "
+                    f"Original error: {exc}"
+                ) from exc
+            logger.warning(
+                "Silver Spark engine failed; allow_fallback=True — cleaning Silver layer then pandas: %s",
+                exc,
+            )
+            from openf1_pipeline.utils.cleanup import clean_silver_layer_outputs
+
+            clean_silver_layer_outputs(silver_dir=silver_dir)
     return run_silver_cleaning_pandas(bronze_dir, silver_dir, data_quality_reports_dir)

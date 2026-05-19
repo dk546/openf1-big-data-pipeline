@@ -31,7 +31,9 @@ SOURCE_PREFIXES = ("source_",)
 def get_model_feature_columns(feature_dictionary: pd.DataFrame) -> list[str]:
     """Select features allowed for modeling from feature dictionary CSV."""
     if feature_dictionary.empty:
-        return []
+        raise ValueError(
+            "Feature dictionary is empty. Run notebook 03 (Gold) to generate feature_dictionary.csv."
+        )
     allowed = feature_dictionary.loc[
         feature_dictionary["allowed_for_modeling"] == True, "feature_name"  # noqa: E712
     ].tolist()
@@ -45,6 +47,12 @@ def get_model_feature_columns(feature_dictionary: pd.DataFrame) -> list[str]:
         if any(col.startswith(p) for p in SOURCE_PREFIXES):
             continue
         cols.append(col)
+    if not cols:
+        raise ValueError(
+            "No model feature columns available after applying feature_dictionary "
+            "and leakage exclusions. Re-run Gold (notebook 03) and check "
+            "gold_leakage_guard_report.csv."
+        )
     return cols
 
 
