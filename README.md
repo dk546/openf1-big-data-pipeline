@@ -339,3 +339,17 @@ On Colab with Drive: outputs live under `/content/drive/MyDrive/openf1_big_data_
 | Report artifacts & final manifest | Code complete — run `05` in Colab after modeling |
 
 Track progress in `implementation_checklist.md`.
+
+---
+
+## 15. Report structure and artifact traceability
+
+The final written deliverable structure is **locked** in [`reports/report_draft/report_structure.md`](reports/report_draft/report_structure.md).
+
+| Document | Purpose |
+|----------|---------|
+| [`report_artifact_map.md`](reports/report_draft/report_artifact_map.md) | Maps every report subsection to pipeline CSVs, notebooks, and paths |
+| [`table_figure_register.md`](reports/report_draft/table_figure_register.md) | Planned Tables 1–14 and Figures 1–8 with source artifacts |
+| [`narrative_guardrails.md`](reports/report_draft/narrative_guardrails.md) | Locked wording (task framing, tiers, smoke vs full) |
+
+**Evidence policy:** Smoke runs under `evidence/` validate pipeline wiring and joins. **Official performance claims** require full 2023–2025 execution on Drive; notebook `05` consolidates DQ and model CSVs into `reports/tables/` and `reports/figures/`. Until then, use `[PENDING]` placeholders — do not cite smoke model metrics as final findings.
