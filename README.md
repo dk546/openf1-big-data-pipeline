@@ -63,7 +63,9 @@ Bronze ingestion (`01_ingestion_bronze.ipynb`) should be executed in **Google Co
 
 | Artifact | Path |
 |----------|------|
-| Ingestion manifest | `artifacts/manifests/ingestion_manifest.csv` |
+| Ingestion manifest (original) | `artifacts/manifests/ingestion_manifest.csv` |
+| Ingestion retry manifest (optional) | `artifacts/manifests/ingestion_retry_manifest.csv` |
+| Effective post-retry manifest (optional) | `artifacts/manifests/ingestion_manifest_effective.csv` |
 | File inventory | `reports/data_quality/bronze_file_inventory.csv` |
 | Row counts | `reports/data_quality/bronze_row_counts.csv` |
 | Schema report | `reports/data_quality/bronze_schema_report.csv` |
@@ -79,9 +81,13 @@ Raw payloads: `data/bronze/{endpoint}/…/*.jsonl` (typically on Google Drive vi
 
 **`starting_grid`** is optional (may be empty on smoke). The planned **heuristic baseline** uses **`first_observed_position` ≤ 10** from Gold early-position features, not grid position.
 
-### Optional: targeted Bronze retry for failed session endpoints
+### Targeted retry and manifest-file reconciliation
 
-Full Bronze runs occasionally leave behind failed session-level rows in the manifest (most commonly HTTP 429 from the OpenF1 API). To recover those sessions without re-running the entire 2023–2025 ingestion, notebook `01_ingestion_bronze.ipynb` exposes an **optional targeted retry** at the bottom:
+Two Bronze data-quality controls work together to keep the manifest, the on-disk JSONL inventory, and the modeling target consistent.
+
+**Why reconciliation exists.** `bronze_manifest_file_reconciliation.csv` (and its summary) join `ingestion_manifest.csv` against the JSONL inventory on disk and classify every `(endpoint, year, session_key)` triple. They detect stale files (e.g. JSONL left behind by an earlier smoke run when `CLEAR_BRONZE_OUTPUTS=False`), row-count drift between manifest and disk, manifest-success rows with no file on Drive, failures that nonetheless left data on Drive, and required-endpoint failures with no file. The notebook prints a clear `OK` / `WARNING` line based on this report and **does not let Silver run on an inconsistent Bronze state**.
+
+**Why targeted retry exists.** Full Bronze runs occasionally leave behind failed session-level rows in the manifest (most commonly HTTP 429 from the OpenF1 API). To recover those sessions without re-running the entire 2023–2025 ingestion, notebook `01_ingestion_bronze.ipynb` exposes an **optional targeted retry** at the bottom:
 
 ```python
 RUN_TARGETED_RETRY    = False   # set True to actually run the retry
@@ -97,8 +103,19 @@ Behaviour:
 - `starting_grid` is excluded by default. Global endpoints (`meetings`, `sessions`) are never retried by this utility.
 - Overwrites/creates only the corresponding `data/bronze/{endpoint}/year={year}/session_key={session_key}.jsonl` files on Drive.
 - The original `ingestion_manifest.csv` is preserved unchanged. Retry results are written to `artifacts/manifests/ingestion_retry_manifest.csv`.
-- After retry, the notebook regenerates `bronze_file_inventory.csv`, `bronze_row_counts.csv`, `bronze_schema_report.csv`, `bronze_schema_drift.csv`, the `artifacts/schemas/bronze_schema_report.csv` schema snapshot, the `bronze_manifest_file_reconciliation*.csv` reports, and the `duckdb_bronze_*` validation CSVs so the on-disk Bronze evidence reflects the new files.
-- Programmatic API: `openf1_pipeline.ingestion.ingest.retry_failed_session_endpoints(...)`. See `artifacts/pipeline_logs/full_bronze_retry_plan.md` for the full workflow and `artifacts/pipeline_logs/bronze_manifest_file_reconciliation_added.md` for the reconciliation contract.
+- After retry, the notebook **builds an effective post-retry manifest** at `artifacts/manifests/ingestion_manifest_effective.csv` (via `openf1_pipeline.ingestion.ingest.write_effective_manifest_after_retry(...)`), then regenerates `bronze_file_inventory.csv`, `bronze_row_counts.csv`, `bronze_schema_report.csv`, `bronze_schema_drift.csv`, the `artifacts/schemas/bronze_schema_report.csv` schema snapshot, the `bronze_manifest_file_reconciliation*.csv` reports **against the effective manifest**, and the `duckdb_bronze_*` validation CSVs so the on-disk Bronze evidence reflects the new files.
+- Programmatic API: `openf1_pipeline.ingestion.ingest.retry_failed_session_endpoints(...)` and `openf1_pipeline.ingestion.ingest.write_effective_manifest_after_retry(...)`. See `artifacts/pipeline_logs/full_bronze_retry_plan.md` for the retry workflow, `artifacts/pipeline_logs/bronze_manifest_file_reconciliation_added.md` for the reconciliation contract, and `artifacts/pipeline_logs/bronze_effective_manifest_post_retry.md` for the effective-manifest contract.
+
+**Effective post-retry manifest.** `ingestion_manifest_effective.csv` is built by overlaying the retry manifest on the original manifest:
+
+- Successful original rows pass through unchanged (`manifest_source = "original"`).
+- For every `(endpoint, session_key)` attempted by retry, the retry row supersedes the original — successful retries become `success`, still-failed retries remain `failed` (`manifest_source = "retry"`).
+- Optional `starting_grid` failures (skipped by retry) pass through as `failed` and are accepted by reconciliation as `optional_missing`.
+- The original `ingestion_manifest.csv` is **never modified**.
+
+Reconciliation auto-detects this: if `ingestion_retry_manifest.csv` is present with at least one recovered row, the notebook reconciles against the effective manifest. Otherwise it reconciles against the original. The notebook prints which manifest path was used.
+
+**How these reports gate Silver.** Proceed to `02_silver_cleaning_quality.ipynb` only when the reconciliation summary shows zero `row_count_mismatch`, zero `manifest_success_missing_file`, zero `stale_file_not_in_success_manifest`, and zero `failed_manifest_file_exists` for required endpoints (`optional_missing` for `starting_grid` is accepted). If the reconciliation flags issues, run the targeted retry first, then re-check against the effective manifest.
 
 ---
 

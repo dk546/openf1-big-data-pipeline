@@ -23,7 +23,10 @@ Planned tables and figures for the final written deliverable. **Do not populate 
 | Table 11 | Baseline and model performance comparison | §6.3–6.4 | `baseline_metrics.csv`; `validation_metrics.csv`; `test_metrics.csv`; `reports/tables/model_baseline_comparison_table.csv` | `04`, `05` | final modeling pending | **Smoke metrics: wiring only** |
 | Table 12 | Confusion matrix | §6.5 | `confusion_matrix.csv`; `reports/tables/confusion_matrix_table.csv` | `04`, `05` | final modeling pending | |
 | Table 13 | Error analysis summary | §6.5 | `error_analysis.csv`; `reports/tables/error_analysis_summary_table.csv` | `04`, `05` | final modeling pending | By team/circuit/season |
-| Table 14 | Reproducibility artifacts | §6.6, §3.6 | `reports/tables/reproducibility_artifacts_table.csv`; manifests | `05` | final modeling pending | Lists seeds, paths, git hash |
+| Table 14 | Reproducibility artifacts | §6.6, §3.6 | `reports/tables/reproducibility_artifacts_table.csv`; manifests | `05` | final modeling pending | Lists seeds, paths, git hash; should also list retry manifest + reconciliation reports |
+| Table 15 | Bronze ingestion retry summary | §3.2, §4.3 | `artifacts/manifests/ingestion_retry_manifest.csv` (via `summarize_retry_manifest(...)`) | `01` (retry section); optionally consolidated in `05` | **pending until retry completes** | Columns: `endpoint`, `retry_attempts`, `retry_success_count`, `retry_failure_count`, `rows_recovered`, `remaining_failures`. Aggregated from the retry manifest. |
+| Table 16 | Bronze manifest-file reconciliation summary | §3.2, §4.2 | `reports/data_quality/bronze_manifest_file_reconciliation_summary.csv` (built against `ingestion_manifest_effective.csv` when retry has run, otherwise against `ingestion_manifest.csv`; DuckDB cross-check in `duckdb_bronze_manifest_file_reconciliation_summary.csv`) | `01` (reconciliation + DuckDB sections) | full-run evidence available; refreshed post-retry — post-retry version **pending until retry completes** | Columns: `reconciliation_status`, `issue_type`, `count`, `interpretation`. Drives the Silver go/no-go decision. When citing post-retry totals, also cite the manifest path used (effective vs original). |
+| Table 17 | Target coverage before/after retry | §4.4, §4.5 | `artifacts/manifests/ingestion_manifest.csv`; `artifacts/manifests/ingestion_retry_manifest.csv`; `artifacts/manifests/ingestion_manifest_effective.csv`; `reports/data_quality/bronze_row_counts.csv`; `reports/data_quality/bronze_manifest_file_reconciliation.csv` | `01` (retry verification cell); consolidated in `05` | **pending until retry completes** | Columns: `season`, `race_sessions`, `session_result_before_retry`, `session_result_recovered_by_retry`, `session_result_effective`, `final_target_coverage`, `coverage_percentage`. `session_result_effective` is the authoritative post-retry number (sourced from the effective manifest). Goal 89/89 across 2023–2025. |
 
 ---
 
@@ -39,6 +42,7 @@ Planned tables and figures for the final written deliverable. **Do not populate 
 | Figure 6 | Target distribution | §5.5, §6.1 | `gold_target_distribution.csv` | `05` | smoke evidence available | `target_distribution.png`; smoke 50/50 not final |
 | Figure 7 | Model metric comparison | §6.4 | `validation_metrics.csv`; `test_metrics.csv` | `05` | final modeling pending | `model_metric_comparison.png` |
 | Figure 8 | Feature importance top 20 | §6.5 | `feature_importance.csv` | `05` | final modeling pending | `feature_importance_top20.png`; smoke may be degenerate |
+| Figure 9 *(optional)* | Target coverage before vs after retry | §4.4, §4.5 | Table 17 (`target_coverage_before_after_retry`) derived from `ingestion_manifest.csv`, `ingestion_retry_manifest.csv`, `bronze_manifest_file_reconciliation.csv` | `05` (optional matplotlib bar chart) | **pending until retry completes** | Two grouped bars per season: `session_result` successes before retry vs total coverage after retry; annotate optional `starting_grid` gap. |
 
 ---
 
@@ -48,8 +52,10 @@ Planned tables and figures for the final written deliverable. **Do not populate 
 |----------|-------------|---------------------------|
 | Tables 1–10 | Yes (with volume caveats) | Table 2, 9 full-run values |
 | Tables 11–14 | Structure only if `04` smoke run exists | Official metrics |
+| Tables 15–17 | Structure defined; populated only after notebook `01` retry section is run with `RUN_TARGETED_RETRY=True` | Retry outcomes + post-retry target coverage |
 | Figures 1–2, 7–8 | Placeholder or pending | Final versions |
 | Figures 3–6 | Can generate from smoke via `05` | Rescale for full data |
+| Figure 9 *(optional)* | Pending Table 17 | Build from Table 17 in `05` |
 
 ---
 
@@ -68,3 +74,4 @@ Planned tables and figures for the final written deliverable. **Do not populate 
 | `confusion_matrix_table.csv` | Table 12 |
 | `error_analysis_summary_table.csv` | Table 13 |
 | `reproducibility_artifacts_table.csv` | Table 14 |
+| Notebook `01` retry section direct outputs (no `05` consolidation needed): `artifacts/manifests/ingestion_retry_manifest.csv`, `reports/data_quality/bronze_manifest_file_reconciliation*.csv`, `duckdb_bronze_manifest_file_reconciliation_*.csv` | Tables 15, 16; Figure 9 |

@@ -268,21 +268,66 @@ manifest_df.groupby(["endpoint", "status"]).size().unstack(fill_value=0)"""),
 report_result"""),
         md("""## Manifest ↔ Bronze files reconciliation
 
-Cross-checks `artifacts/manifests/ingestion_manifest.csv` against the JSONL inventory on disk.
-Produces:
+Cross-checks the **effective** Bronze manifest (original ingestion overlaid with any
+successful retry rows) against the JSONL inventory on disk. Produces:
 
 - `reports/data_quality/bronze_manifest_file_reconciliation.csv`
 - `reports/data_quality/bronze_manifest_file_reconciliation_summary.csv`
 
 This is the canonical place to detect stale files (e.g. smoke leftovers), row-count drift,
 manifest-success-but-file-missing, and failed-but-file-present states **before** Silver runs.
+
+The cell below auto-detects whether a prior `ingestion_retry_manifest.csv` exists. If retry
+recovered any rows it reconciles against `artifacts/manifests/ingestion_manifest_effective.csv`
+(merging original + retry without touching the original manifest); otherwise it reconciles
+against the original `ingestion_manifest.csv`.
 """),
         code("""from openf1_pipeline.bronze.build_bronze import (
     generate_bronze_reconciliation_reports,
 )
+from openf1_pipeline.ingestion.ingest import (
+    summarize_retry_manifest,
+    write_effective_manifest_after_retry,
+)
+
+_original_manifest_path = get_manifests_dir() / "ingestion_manifest.csv"
+_retry_manifest_path = get_manifests_dir() / "ingestion_retry_manifest.csv"
+
+# Defensive: if a retry manifest exists with newly_successful > 0, reconciliation
+# MUST use the effective merged manifest. Otherwise retry-recovered files would
+# appear as failed_but_file_present against the original manifest.
+if _retry_manifest_path.is_file():
+    _retry_preview = pd.read_csv(_retry_manifest_path)
+    _retry_preview_summary = summarize_retry_manifest(_retry_preview)
+    if _retry_preview_summary["newly_successful"] > 0:
+        _effective = write_effective_manifest_after_retry(
+            manifest_path=_original_manifest_path,
+            retry_manifest_path=_retry_manifest_path,
+            manifests_dir=get_manifests_dir(),
+        )
+        _manifest_path_for_reconciliation = _effective["path"]
+        print(
+            "[reconciliation] Using effective merged manifest "
+            f"({_retry_preview_summary['newly_successful']} retry successes overlay original):"
+        )
+        print(f"  {_manifest_path_for_reconciliation}")
+        print(
+            "  rows_from_original=" + str(_effective["counts"]["rows_from_original"]) +
+            ", rows_from_retry=" + str(_effective["counts"]["rows_from_retry"]) +
+            ", retry_keys_replaced=" + str(_effective["counts"]["retry_keys_replaced"])
+        )
+    else:
+        _manifest_path_for_reconciliation = _original_manifest_path
+        print(
+            "[reconciliation] Retry manifest present but no newly successful rows."
+        )
+        print(f"  Using original manifest: {_manifest_path_for_reconciliation}")
+else:
+    _manifest_path_for_reconciliation = _original_manifest_path
+    print(f"[reconciliation] Using original manifest: {_manifest_path_for_reconciliation}")
 
 reconciliation = generate_bronze_reconciliation_reports(
-    manifest_path=get_manifests_dir() / "ingestion_manifest.csv",
+    manifest_path=_manifest_path_for_reconciliation,
     bronze_dir=get_bronze_dir(),
     data_quality_reports_dir=get_data_quality_reports_dir(),
     row_counts_df=pd.read_csv(report_result["paths"]["bronze_row_counts"]),
@@ -461,11 +506,23 @@ else:
         md("""### Regenerate Bronze reports, reconciliation, and DuckDB validation after retry
 
 Only runs when `RUN_TARGETED_RETRY = True` and the retry actually attempted rows.
-This refreshes `bronze_file_inventory.csv`, `bronze_row_counts.csv`,
-`bronze_schema_report.csv`, `bronze_schema_drift.csv`,
-`bronze_manifest_file_reconciliation.csv`,
-`bronze_manifest_file_reconciliation_summary.csv`, and all `duckdb_bronze_*` CSVs."""),
-        code("""if RUN_TARGETED_RETRY and retry_df is not None and not retry_df.empty:
+
+This refresh:
+
+1. Regenerates Bronze Spark reports (`bronze_file_inventory.csv`, `bronze_row_counts.csv`,
+   `bronze_schema_report.csv`, `bronze_schema_drift.csv`).
+2. Builds the **effective post-retry manifest**
+   `artifacts/manifests/ingestion_manifest_effective.csv` by overlaying retry successes on
+   the original ingestion manifest. The original `ingestion_manifest.csv` is preserved
+   unchanged for auditability.
+3. Runs reconciliation **against the effective merged manifest** so retry-recovered files
+   are correctly classified as `matched` (instead of `failed_but_file_present`).
+4. Refreshes all `duckdb_bronze_*` CSVs including the reconciliation cross-checks."""),
+        code("""from openf1_pipeline.ingestion.ingest import (
+    write_effective_manifest_after_retry,
+)
+
+if RUN_TARGETED_RETRY and retry_df is not None and not retry_df.empty:
     refreshed_report = generate_bronze_reports(
         bronze_dir=get_bronze_dir(),
         data_quality_reports_dir=get_data_quality_reports_dir(),
@@ -475,8 +532,26 @@ This refreshes `bronze_file_inventory.csv`, `bronze_row_counts.csv`,
         allow_fallback=ALLOW_FALLBACK,
     )
 
-    refreshed_reconciliation = generate_bronze_reconciliation_reports(
+    # Build a durable effective manifest from original + retry (original CSV is preserved).
+    effective_manifest = write_effective_manifest_after_retry(
         manifest_path=get_manifests_dir() / "ingestion_manifest.csv",
+        retry_manifest_path=get_manifests_dir() / "ingestion_retry_manifest.csv",
+        manifests_dir=get_manifests_dir(),
+    )
+    effective_manifest_path = effective_manifest["path"]
+    print("Effective manifest written:")
+    print(f"  path: {effective_manifest_path}")
+    for k, v in effective_manifest["counts"].items():
+        print(f"  {k}: {v}")
+
+    print(
+        "\\nReconciliation manifest used: "
+        + str(effective_manifest_path)
+        + " (effective merged manifest)"
+    )
+
+    refreshed_reconciliation = generate_bronze_reconciliation_reports(
+        manifest_path=effective_manifest_path,
         bronze_dir=get_bronze_dir(),
         data_quality_reports_dir=get_data_quality_reports_dir(),
         row_counts_df=pd.read_csv(refreshed_report["paths"]["bronze_row_counts"]),
@@ -487,7 +562,7 @@ This refreshes `bronze_file_inventory.csv`, `bronze_row_counts.csv`,
         refreshed_bronze_duckdb, get_data_quality_reports_dir(), prefix="bronze"
     )
 
-    print("Refreshed Bronze report summary:")
+    print("\\nRefreshed Bronze report summary:")
     print(refreshed_report["summary"])
     print("\\nRefreshed reconciliation totals:")
     for k, v in refreshed_reconciliation["summary"].items():
@@ -513,9 +588,13 @@ else:
     print("Skipping Bronze report refresh — no retry rows or retry disabled.")"""),
         md("""### Verify session_result coverage after retry
 
-Compares the original manifest, the retry manifest, and the current Drive file inventory."""),
+Compares the original manifest, the retry manifest, the effective merged manifest, and the
+current Drive file inventory. The effective manifest is the authoritative post-retry view."""),
         code("""if RUN_TARGETED_RETRY and retry_df is not None and not retry_df.empty:
     original_manifest = pd.read_csv(get_manifests_dir() / "ingestion_manifest.csv")
+    effective_manifest_df = pd.read_csv(
+        get_manifests_dir() / "ingestion_manifest_effective.csv"
+    )
     refreshed_inventory = pd.read_csv(
         get_data_quality_reports_dir() / "bronze_file_inventory.csv"
     )
@@ -528,12 +607,22 @@ Compares the original manifest, the retry manifest, and the current Drive file i
         (retry_df["endpoint"] == "session_result")
         & (retry_df["status"] == "success")
     ).sum()
+    sr_effective_ok = (
+        (effective_manifest_df["endpoint"] == "session_result")
+        & (effective_manifest_df["status"] == "success")
+    ).sum()
     sr_files = (refreshed_inventory["endpoint"] == "session_result").sum()
 
     print(f"session_result manifest success (original run): {sr_orig_ok}")
     print(f"session_result manifest success (retry only): {sr_retry_ok}")
+    print(f"session_result manifest success (effective merged): {sr_effective_ok}")
     print(f"session_result JSONL files on Drive (after retry): {sr_files}")
-    print(f"=> effective session_result coverage: {sr_orig_ok + sr_retry_ok} sessions")
+    print(f"=> effective session_result coverage: {sr_effective_ok} sessions")
+    if sr_effective_ok != sr_orig_ok + sr_retry_ok:
+        print(
+            "  NOTE: effective != original + retry — expected if retry attempts overlapped "
+            "with already-successful original rows."
+        )
 else:
     print("Skipping coverage verification (retry not run or retry was empty).")"""),
     ]

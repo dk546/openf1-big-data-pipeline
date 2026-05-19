@@ -41,6 +41,13 @@ RETRY_MANIFEST_COLUMNS = MANIFEST_COLUMNS + [
     "retry_attempt",
 ]
 
+EFFECTIVE_MANIFEST_COLUMNS = MANIFEST_COLUMNS + ["manifest_source"]
+EFFECTIVE_MANIFEST_FILENAME = "ingestion_manifest_effective.csv"
+
+# Provenance tags for the effective post-retry manifest.
+MANIFEST_SOURCE_ORIGINAL = "original"
+MANIFEST_SOURCE_RETRY = "retry"
+
 # Endpoints that may be missing for some sessions; failures are logged but non-fatal.
 OPTIONAL_SESSION_ENDPOINTS = frozenset({"starting_grid"})
 
@@ -635,14 +642,26 @@ def merge_retry_into_manifest(
 
     Strategy: drop original rows whose ``(endpoint, session_key)`` was attempted
     in the retry (regardless of retry outcome), then concatenate retry rows
-    truncated to the original ``MANIFEST_COLUMNS`` schema. The original manifest
-    DataFrame and CSV are not mutated. The caller decides whether to persist the
-    result.
+    truncated to the original ``MANIFEST_COLUMNS`` schema. A ``manifest_source``
+    column is added (``"original"`` for surviving rows, ``"retry"`` for retry
+    rows) so downstream consumers — notably reconciliation — can audit
+    provenance. The original manifest DataFrame and CSV are **not** mutated.
+    The caller decides whether to persist the result (see
+    :func:`write_effective_manifest_after_retry`).
     """
+    if manifest_df.empty and retry_df.empty:
+        cols = list(EFFECTIVE_MANIFEST_COLUMNS)
+        return pd.DataFrame(columns=cols)
+
     if manifest_df.empty:
-        return retry_df[MANIFEST_COLUMNS].copy() if not retry_df.empty else manifest_df.copy()
+        retry_slim = retry_df[MANIFEST_COLUMNS].copy()
+        retry_slim["manifest_source"] = MANIFEST_SOURCE_RETRY
+        return retry_slim[EFFECTIVE_MANIFEST_COLUMNS].reset_index(drop=True)
+
     if retry_df.empty:
-        return manifest_df.copy()
+        kept = manifest_df[MANIFEST_COLUMNS].copy()
+        kept["manifest_source"] = MANIFEST_SOURCE_ORIGINAL
+        return kept[EFFECTIVE_MANIFEST_COLUMNS].reset_index(drop=True)
 
     retry_keys = set(
         zip(
@@ -659,8 +678,145 @@ def merge_retry_into_manifest(
 
     keep_mask = ~manifest_df.apply(_drop_key, axis=1)
     kept = manifest_df.loc[keep_mask, MANIFEST_COLUMNS].copy()
+    kept["manifest_source"] = MANIFEST_SOURCE_ORIGINAL
+
     retry_slim = retry_df[MANIFEST_COLUMNS].copy()
-    return pd.concat([kept, retry_slim], ignore_index=True)
+    retry_slim["manifest_source"] = MANIFEST_SOURCE_RETRY
+
+    merged = pd.concat([kept, retry_slim], ignore_index=True)
+    return merged[EFFECTIVE_MANIFEST_COLUMNS]
+
+
+def write_effective_manifest_after_retry(
+    manifest_path: Path | None = None,
+    retry_manifest_path: Path | None = None,
+    manifests_dir: Path | None = None,
+    effective_manifest_filename: str = EFFECTIVE_MANIFEST_FILENAME,
+) -> dict[str, Any]:
+    """
+    Build and persist a durable effective post-retry manifest.
+
+    Reads the original ``ingestion_manifest.csv`` and the retry manifest
+    ``ingestion_retry_manifest.csv`` (if present), merges them via
+    :func:`merge_retry_into_manifest`, tags each row's provenance in
+    ``manifest_source``, and writes the result to
+    ``artifacts/manifests/ingestion_manifest_effective.csv``.
+
+    The merge logic guarantees:
+
+    - Successful original rows are preserved unchanged
+      (``manifest_source="original"``).
+    - For every ``(endpoint, session_key)`` retried, the retry outcome
+      supersedes the original failure — successful retries become success
+      rows, still-failed retries remain failed rows
+      (``manifest_source="retry"``).
+    - Optional endpoints (``starting_grid``) that the retry intentionally
+      skipped keep their original ``failed`` status and pass through as
+      acceptable ``optional_missing`` during reconciliation.
+    - The original CSV is **never** overwritten — only the new
+      effective CSV is written.
+
+    Parameters
+    ----------
+    manifest_path : Path | None
+        Override the original manifest path. Defaults to
+        ``artifacts/manifests/ingestion_manifest.csv``.
+    retry_manifest_path : Path | None
+        Override the retry manifest path. Defaults to
+        ``artifacts/manifests/ingestion_retry_manifest.csv``. If the file is
+        absent or empty, the effective manifest is just the original with
+        every row tagged ``manifest_source="original"``.
+    manifests_dir : Path | None
+        Override the manifests dir. Defaults to ``get_manifests_dir()``.
+    effective_manifest_filename : str
+        Output filename for the effective manifest CSV. Saved next to the
+        original manifest.
+
+    Returns
+    -------
+    dict
+        ``{
+            "path": Path,               # written CSV path
+            "df": pd.DataFrame,         # the effective manifest
+            "counts": {
+                "rows_from_original": int,
+                "rows_from_retry": int,
+                "retry_keys_replaced": int,
+                "total_rows": int,
+                "retry_manifest_present": bool,
+                "retry_rows_used": int,
+            },
+            "manifest_path": Path,      # original manifest path used
+            "retry_manifest_path": Path # retry manifest path used (may not exist)
+        }``
+    """
+    from openf1_pipeline.config import get_manifests_dir
+
+    manifests_dir = Path(manifests_dir or get_manifests_dir())
+    manifest_path = Path(manifest_path or (manifests_dir / "ingestion_manifest.csv"))
+    retry_manifest_path = Path(
+        retry_manifest_path or (manifests_dir / "ingestion_retry_manifest.csv")
+    )
+
+    if not manifest_path.is_file():
+        raise FileNotFoundError(
+            f"Ingestion manifest not found at {manifest_path}. "
+            "Run notebook 01 ingestion first."
+        )
+
+    manifest_df = pd.read_csv(manifest_path)
+    retry_present = retry_manifest_path.is_file()
+    if retry_present:
+        retry_df = pd.read_csv(retry_manifest_path)
+    else:
+        retry_df = pd.DataFrame(columns=RETRY_MANIFEST_COLUMNS)
+
+    effective_df = merge_retry_into_manifest(manifest_df, retry_df)
+
+    ensure_dir(manifests_dir)
+    effective_path = manifests_dir / effective_manifest_filename
+    save_dataframe_csv(effective_df, effective_path)
+
+    rows_from_original = int(
+        (effective_df["manifest_source"] == MANIFEST_SOURCE_ORIGINAL).sum()
+    ) if not effective_df.empty else 0
+    rows_from_retry = int(
+        (effective_df["manifest_source"] == MANIFEST_SOURCE_RETRY).sum()
+    ) if not effective_df.empty else 0
+
+    if retry_df.empty:
+        retry_keys_replaced = 0
+        retry_rows_used = 0
+    else:
+        retry_rows_used = int(len(retry_df))
+        retry_keys_replaced = int(
+            retry_df.drop_duplicates(subset=["endpoint", "session_key"]).shape[0]
+        )
+
+    logger.info(
+        "Wrote effective manifest %s (rows_from_original=%s, rows_from_retry=%s, "
+        "retry_keys_replaced=%s, retry_present=%s).",
+        effective_path,
+        rows_from_original,
+        rows_from_retry,
+        retry_keys_replaced,
+        retry_present,
+    )
+
+    return {
+        "path": effective_path,
+        "df": effective_df,
+        "counts": {
+            "rows_from_original": rows_from_original,
+            "rows_from_retry": rows_from_retry,
+            "retry_keys_replaced": retry_keys_replaced,
+            "total_rows": int(len(effective_df)),
+            "retry_manifest_present": bool(retry_present),
+            "retry_rows_used": retry_rows_used,
+        },
+        "manifest_path": manifest_path,
+        "retry_manifest_path": retry_manifest_path,
+    }
 
 
 def summarize_retry_manifest(retry_df: pd.DataFrame) -> dict[str, Any]:

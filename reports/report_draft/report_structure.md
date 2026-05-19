@@ -58,9 +58,17 @@
 
 ### 3.2 Bronze layer: raw API ingestion and immutable JSONL storage
 
-**Purpose:** `requests` ingestion, JSONL layout, manifests, schema profiling.
+**Purpose:** `requests` ingestion, JSONL layout, manifests, schema profiling, targeted retry for transient API failures, manifest-vs-file reconciliation, and independent Bronze Spark / DuckDB validation.
 
-**Evidence:** Notebook `01`; `data/bronze/`; `ingestion_manifest.csv`; Bronze DQ CSVs.
+**Evidence:** Notebook `01`; `data/bronze/`; `ingestion_manifest.csv`; `ingestion_retry_manifest.csv` *(generated only when targeted retry is run)*; `ingestion_manifest_effective.csv` *(generated after retry; reconciliation runs against this)*; Bronze DQ CSVs including `bronze_manifest_file_reconciliation.csv`, `bronze_manifest_file_reconciliation_summary.csv`, `duckdb_bronze_*` (including `duckdb_bronze_manifest_file_reconciliation_summary.csv`, `..._by_endpoint.csv`, `..._issues.csv`).
+
+**Narrative anchors:**
+
+- Manifest is the canonical Bronze provenance record per `(endpoint, year, session_key)`.
+- Targeted retry uses `openf1_pipeline.ingestion.ingest.retry_failed_session_endpoints(...)` to re-fetch only failed required session endpoints with slower pacing (default 3 s base sleep); it preserves the original manifest and writes a separate retry manifest.
+- **Effective post-retry manifest** built by `write_effective_manifest_after_retry(...)` overlays retry rows on the original manifest with a `manifest_source` provenance tag (`"original"` / `"retry"`). Reconciliation runs against this effective manifest; without it, retry-recovered files appear as `failed_but_file_present`.
+- Manifest-vs-file reconciliation joins the (effective) manifest to the on-disk JSONL inventory and classifies every triple into `matched`, `row_count_mismatch`, `manifest_success_missing_file`, `failed_manifest_file_exists`, `stale_file_not_in_success_manifest`, `optional_missing`, or `manifest_failed_no_file`.
+- See `artifacts/pipeline_logs/full_bronze_retry_plan.md`, `artifacts/pipeline_logs/bronze_manifest_file_reconciliation_added.md`, and `artifacts/pipeline_logs/bronze_effective_manifest_post_retry.md`.
 
 ### 3.3 Silver layer: PySpark cleaning, schema enforcement, and quality checks
 
@@ -98,27 +106,39 @@
 
 ### 4.2 Detection strategy
 
-**Purpose:** How each error class is detected (Spark steps, profiling, DuckDB SQL).
+**Purpose:** How each error class is detected (Spark steps, profiling, DuckDB SQL). Includes a **Bronze-layer detection control** for manifest-vs-file inconsistencies before any Silver work runs.
 
-**Evidence:** `silver_cleaning_rules.csv`; `silver_duplicate_report.csv`; `silver_outlier_report.csv`; `silver_temporal_anomaly_report.csv`; `silver_referential_integrity_report.csv`.
+**Evidence:**
+
+- **Bronze-layer detection** — `bronze_manifest_file_reconciliation.csv`, `bronze_manifest_file_reconciliation_summary.csv`, `duckdb_bronze_manifest_file_reconciliation_summary.csv`, `duckdb_bronze_manifest_file_reconciliation_by_endpoint.csv`, `duckdb_bronze_manifest_file_reconciliation_issues.csv` (from `generate_bronze_reconciliation_reports(...)`).
+- **Silver-layer detection** — `silver_cleaning_rules.csv`; `silver_duplicate_report.csv`; `silver_outlier_report.csv`; `silver_temporal_anomaly_report.csv`; `silver_referential_integrity_report.csv`.
 
 ### 4.3 Remediation rules
 
-**Purpose:** Casting, dedupe, domain filters, imputation flags — with step IDs.
+**Purpose:** Casting, dedupe, domain filters, imputation flags — with step IDs. Also documents the **Bronze remediation loop** for transient API failures.
 
-**Evidence:** `silver_cleaning_rules.csv`; `silver_rejected_records_summary.csv`; `silver_cleaning_impact_summary.csv`.
+**Evidence:**
+
+- **Bronze remediation** — `retry_failed_session_endpoints(...)` re-fetches failed required session endpoints with slower pacing (default 3 s base sleep), writing `artifacts/manifests/ingestion_retry_manifest.csv` without modifying the original manifest. `write_effective_manifest_after_retry(...)` then produces `artifacts/manifests/ingestion_manifest_effective.csv` — the merged provenance-tagged manifest reconciliation runs against. Optional `delete_stale_bronze_files(...)` is opt-in for the three known stale smoke files. `starting_grid` is excluded from retry by default because it is optional.
+- **Silver remediation** — `silver_cleaning_rules.csv`; `silver_rejected_records_summary.csv`; `silver_cleaning_impact_summary.csv`.
 
 ### 4.4 Before/after validation
 
-**Purpose:** Quantify missingness and cleaning impact.
+**Purpose:** Quantify missingness, cleaning impact, and Bronze retry effect.
 
-**Evidence:** `silver_missingness_before.csv`; `silver_missingness_after.csv`; Figure 4; `duckdb_silver_*.csv`.
+**Evidence:**
+
+- **Bronze before/after** — `ingestion_manifest.csv` (original full run) vs `ingestion_retry_manifest.csv` (retry results) vs `ingestion_manifest_effective.csv` (merged) vs refreshed `bronze_row_counts.csv`, `bronze_file_inventory.csv`, and `bronze_manifest_file_reconciliation_summary.csv` after retry. Status: retry results `[PENDING: targeted retry not yet executed]` *(or already executed — confirm whether the effective-manifest reconciliation was used to produce the post-retry totals cited in the report).*
+- **Silver before/after** — `silver_missingness_before.csv`; `silver_missingness_after.csv`; Figure 4; `duckdb_silver_*.csv`.
 
 ### 4.5 Cleaning impact on modeling dataset
 
-**Purpose:** Link Silver quality to Gold row retention and join completeness.
+**Purpose:** Link Bronze coverage and Silver quality to Gold row retention and join completeness, with explicit attention to `session_result` coverage as the upstream constraint on the modeling dataset.
 
-**Evidence:** `gold_join_quality_report.csv`; Phase 3 audit; `[PENDING: full-run row counts]`.
+**Evidence:**
+
+- **Bronze target coverage** — `session_result` success counts from `ingestion_manifest.csv` + `ingestion_retry_manifest.csv`, cross-checked against `bronze_file_inventory.csv` via `bronze_manifest_file_reconciliation.csv`. Full coverage target: 89/89 race sessions across 2023–2025. Status: `[PENDING: target coverage after retry]`.
+- **Silver/Gold downstream** — `gold_join_quality_report.csv`; Phase 3 audit; `[PENDING: full-run row counts]`.
 
 ---
 
@@ -192,9 +212,9 @@
 
 ### 6.6 Reproducibility statement
 
-**Purpose:** Seeds, artifact paths, manifest lineage.
+**Purpose:** Seeds, artifact paths, manifest lineage, and the full Bronze ingestion → retry → reconciliation provenance chain.
 
-**Evidence:** `reproducibility_artifacts_table.csv`; `run_manifest.json`; `README.md` §13.
+**Evidence:** `reproducibility_artifacts_table.csv`; `run_manifest.json`; `README.md` §13; `artifacts/manifests/ingestion_manifest.csv`; `artifacts/manifests/ingestion_retry_manifest.csv` *(when retry has run)*; `artifacts/manifests/ingestion_manifest_effective.csv` *(when retry has run)*; `reports/data_quality/bronze_manifest_file_reconciliation.csv` and `..._summary.csv`; `duckdb_bronze_manifest_file_reconciliation_*.csv`; `artifacts/pipeline_logs/full_bronze_output_review.md`, `full_bronze_retry_plan.md`, `bronze_manifest_file_reconciliation_added.md`, `bronze_effective_manifest_post_retry.md`.
 
 ---
 
