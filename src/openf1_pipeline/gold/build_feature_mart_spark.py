@@ -199,6 +199,9 @@ def build_weather_features_spark(weather: DataFrame | None, sessions: DataFrame 
 def build_race_control_features_spark(
     race_control: DataFrame | None, sessions: DataFrame | None
 ) -> DataFrame:
+    # Race-control features use ``message`` and ``flag`` only.
+    # ``qualifying_phase`` is known-empty (100% null in current OpenF1 pulls) per the
+    # Silver data-quality notes, and is intentionally excluded from feature aggregation.
     if race_control is None or race_control.rdd.isEmpty():
         return None
     work = _attach_meeting_key_spark(race_control, sessions)

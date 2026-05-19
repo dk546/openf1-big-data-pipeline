@@ -60,11 +60,32 @@ SILVER_DATA_QUALITY_NOTES: list[dict[str, str]] = [
         "table_name": "race_control",
         "column_or_check": "qualifying_phase",
         "description": (
-            "Expected to be entirely null for race/session types where OpenF1 does not "
-            "populate qualifying metadata."
+            "100% null in this data pull. Expected to be entirely null for race/session "
+            "types where OpenF1 does not populate qualifying metadata; column is retained "
+            "in Silver to keep the schema stable but carries no signal."
         ),
         "blocks_full_run": "no",
-        "recommended_action": "Filter or segment reports by session_type when interpreting.",
+        "recommended_action": (
+            "Gold feature engineering ignores qualifying_phase (race_control features use "
+            "message and flag only). Filter or segment reports by session_type if you ever "
+            "consume this column manually."
+        ),
+    },
+    {
+        "note_category": "duplicate_diagnostic",
+        "table_name": "race_control",
+        "column_or_check": "(session_key,date,message)",
+        "description": (
+            "Diagnostic dedup check flags ~16 rows / 8 key groups (~0.22%) under the "
+            "natural key (session_key, date, message). These are NOT removed at Silver — "
+            "race-control events can legitimately repeat at the same timestamp (e.g. the "
+            "same broadcast reissued per driver or per sector)."
+        ),
+        "blocks_full_run": "no",
+        "recommended_action": (
+            "Retain in Silver; handle with count-aware aggregation in Gold "
+            "(race_control_message_count and friends already count rows, not unique keys)."
+        ),
     },
     {
         "note_category": "structural_missingness",

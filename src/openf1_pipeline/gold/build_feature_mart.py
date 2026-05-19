@@ -361,7 +361,13 @@ def _count_messages(series: pd.Series, needle: str) -> int:
 def build_race_control_features(
     race_control: pd.DataFrame, sessions: pd.DataFrame
 ) -> pd.DataFrame:
-    """Session-level race control message counts."""
+    """Session-level race control message counts.
+
+    ``qualifying_phase`` is intentionally excluded — it is 100% null in current
+    OpenF1 pulls (see Silver data-quality notes). Features use ``message`` and
+    ``flag`` only and are count-aware so legitimate event-stream re-broadcasts
+    contribute to the totals.
+    """
     if race_control.empty:
         return pd.DataFrame(columns=SESSION_KEYS)
 

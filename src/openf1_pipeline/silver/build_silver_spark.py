@@ -363,24 +363,30 @@ def clean_laps_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     logs: list[dict[str, Any]] = []
     if sdf is None or sdf.rdd.isEmpty():
         return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze laps", 0, 0)]
-    num_cols = [
-        "session_key",
-        "driver_number",
-        "lap_number",
+    # Join keys must remain integer (long) for downstream Gold joins; timing fields stay double.
+    key_cols = ["session_key", "driver_number", "lap_number"]
+    measure_cols = [
         "lap_duration",
         "duration",
         "duration_sector_1",
         "duration_sector_2",
         "duration_sector_3",
     ]
+    num_cols = key_cols + measure_cols
+
+    def _cast_laps(d: DataFrame) -> DataFrame:
+        out = _cast_cols(d, [c for c in key_cols if c in d.columns], "long")
+        out = _cast_cols(out, [c for c in measure_cols if c in out.columns], "double")
+        return out
+
     sdf = _spark_step(logs, sdf, table, "SIL_RENAME", "Standardize column names to snake_case", _snake_columns)
     sdf = _spark_step(
         logs,
         sdf,
         table,
         "SIL_CAST_NUM",
-        "Cast lap timing and key fields to numeric types",
-        lambda d: _cast_cols(d, [c for c in num_cols if c in d.columns]),
+        "Cast lap keys to long and timing fields to double",
+        _cast_laps,
         columns_affected=",".join(num_cols),
     )
     sdf = _spark_step(
@@ -444,16 +450,25 @@ def clean_pit_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]]:
     logs: list[dict[str, Any]] = []
     if sdf is None or sdf.rdd.isEmpty():
         return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze pit", 0, 0)]
-    cast_cols = ["session_key", "driver_number", "lap_number", "pit_duration", "lane_duration"]
+    # Join keys must remain integer (long); pit timing measures stay double.
+    key_cols = ["session_key", "driver_number", "lap_number"]
+    measure_cols = ["pit_duration", "lane_duration"]
+    cast_cols = key_cols + measure_cols
     dedupe_keys = ["session_key", "driver_number", "lap_number"]
+
+    def _cast_pit(d: DataFrame) -> DataFrame:
+        out = _cast_cols(d, [c for c in key_cols if c in d.columns], "long")
+        out = _cast_cols(out, [c for c in measure_cols if c in out.columns], "double")
+        return out
+
     sdf = _spark_step(logs, sdf, table, "SIL_RENAME", "Standardize column names to snake_case", _snake_columns)
     sdf = _spark_step(
         logs,
         sdf,
         table,
         "SIL_CAST_NUM",
-        "Cast pit keys and duration fields to numeric types",
-        lambda d: _cast_cols(d, cast_cols),
+        "Cast pit keys to long and duration fields to double",
+        _cast_pit,
         columns_affected=",".join(cast_cols),
     )
     sdf = _spark_step(
@@ -496,17 +511,20 @@ def clean_weather_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]
     logs: list[dict[str, Any]] = []
     if sdf is None or sdf.rdd.isEmpty():
         return _empty_df(sdf.sparkSession, table), [_rule_log(table, "SIL_EMPTY", "No Bronze weather", 0, 0)]
-    num_cols = [
-        "session_key",
+    # session_key is the join key and must remain integer (long).
+    key_cols = ["session_key"]
+    measure_cols = [
         "air_temperature",
         "track_temperature",
         "humidity",
         "pressure",
         "rainfall",
     ]
+    num_cols = key_cols + measure_cols
 
     def _cast_weather(d: DataFrame) -> DataFrame:
-        out = _cast_cols(d, num_cols)
+        out = _cast_cols(d, [c for c in key_cols if c in d.columns], "long")
+        out = _cast_cols(out, [c for c in measure_cols if c in out.columns], "double")
         if "date" in out.columns:
             out = out.withColumn("date", F.to_timestamp(F.col("date")))
         return out
@@ -517,7 +535,7 @@ def clean_weather_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, Any]]
         sdf,
         table,
         "SIL_CAST_SCHEMA",
-        "Cast weather measures and parse date to timestamp",
+        "Cast weather session_key to long, measures to double, parse date to timestamp",
         _cast_weather,
         columns_affected=",".join(num_cols + ["date"]),
     )
@@ -628,6 +646,32 @@ def clean_race_control_spark(sdf: DataFrame) -> tuple[DataFrame, list[dict[str, 
         severity="high",
     )
     sdf = _spark_step(logs, sdf, table, "SIL_DUP_FULL", "Remove exact duplicate rows", _dedupe_exact)
+    # SIL_RC_DUP_CHECK_RETAINED: race-control events may legitimately share
+    # (session_key, date, message) — e.g. the same broadcast reissued per driver
+    # or per sector. We deliberately do NOT collapse them at Silver; downstream
+    # Gold aggregates are count-aware. This step is a documentation no-op so the
+    # decision is auditable in silver_cleaning_rules.csv.
+    _rc_count = sdf.count()
+    logs.append(
+        _rule_log(
+            table,
+            "SIL_RC_DUP_CHECK_RETAINED",
+            (
+                "Race-control duplicate diagnostic groups under "
+                "(session_key,date,message) checked and retained; no row removal "
+                "— event-stream re-broadcasts are legitimate, handle with "
+                "count-aware aggregation in Gold."
+            ),
+            _rc_count,
+            _rc_count,
+            severity="low",
+            columns_affected="session_key,date,message",
+            rationale=(
+                "Race control messages can repeat per driver/sector; "
+                "retaining preserves event fidelity for Gold features."
+            ),
+        )
+    )
     return sdf, logs
 
 
@@ -755,20 +799,21 @@ SPARK_CLEANERS = {
 }
 
 
+MISSINGNESS_COLUMNS = [
+    "table_name",
+    "column_name",
+    "dtype",
+    "missing_count",
+    "missing_pct",
+    "non_missing_count",
+    "unique_count",
+]
+
+
 def spark_missingness(sdf: DataFrame, table_name: str) -> pd.DataFrame:
     total = sdf.count()
     if total == 0:
-        return pd.DataFrame(
-            columns=[
-                "table_name",
-                "column_name",
-                "dtype",
-                "missing_count",
-                "missing_pct",
-                "non_missing_count",
-                "unique_count",
-            ]
-        )
+        return pd.DataFrame(columns=MISSINGNESS_COLUMNS)
     rows = []
     for col in sdf.columns:
         nulls = sdf.filter(F.col(col).isNull()).count()
@@ -849,9 +894,17 @@ def run_silver_cleaning_spark(
         else:
             bronze_spark[endpoint] = _empty_df(spark, endpoint)
 
-    missingness_before = pd.concat(
-        [spark_missingness(sdf, ep) for ep, sdf in bronze_spark.items()],
-        ignore_index=True,
+    # Drop empty per-endpoint missingness frames (e.g. starting_grid with 0 rows)
+    # before concat. Guards against the pandas FutureWarning about concatenation
+    # with empty / all-NA entries; row totals are unchanged because empty frames
+    # contribute zero rows.
+    _before_frames = [
+        f for f in (spark_missingness(sdf, ep) for ep, sdf in bronze_spark.items()) if not f.empty
+    ]
+    missingness_before = (
+        pd.concat(_before_frames, ignore_index=True)
+        if _before_frames
+        else pd.DataFrame(columns=MISSINGNESS_COLUMNS)
     )
     inventory_before = spark_inventory(bronze_spark)
 
@@ -873,9 +926,15 @@ def run_silver_cleaning_spark(
 
     cleaning_rules = pd.DataFrame(all_logs) if all_logs else pd.DataFrame(columns=CLEANING_LOG_COLUMNS)
 
-    missingness_after = pd.concat(
-        [spark_missingness(sdf, ep) for ep, sdf in silver_spark.items()],
-        ignore_index=True,
+    # Same empty-frame guard as missingness_before — keeps the concat warning
+    # free of pandas FutureWarning noise.
+    _after_frames = [
+        f for f in (spark_missingness(sdf, ep) for ep, sdf in silver_spark.items()) if not f.empty
+    ]
+    missingness_after = (
+        pd.concat(_after_frames, ignore_index=True)
+        if _after_frames
+        else pd.DataFrame(columns=MISSINGNESS_COLUMNS)
     )
 
     # Pandas report helpers at report boundary (RI, outliers, temporal) — cleaning was Spark
