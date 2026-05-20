@@ -1,0 +1,29 @@
+table_name,column_name,method,lower_bound,upper_bound,outlier_count,outlier_pct,min_value,max_value,report_type,stage,rule,invalid_count,invalid_pct
+laps,lap_duration,iqr,54.2835,126.3275,3203.0,3.8068,67.012,2625.541,iqr,before,,,
+laps,lap_number,,,,,,,,domain,before,lap_number <= 0,0.0,0.0
+laps,lap_duration,,,,,,,,domain,before,lap_duration <= 0,0.0,0.0
+laps,duration_sector_1,,,,,,,,domain,before,duration_sector_1 <= 0,0.0,0.0
+laps,duration_sector_2,,,,,,,,domain,before,duration_sector_2 <= 0,0.0,0.0
+laps,duration_sector_3,,,,,,,,domain,before,duration_sector_3 <= 0,0.0,0.0
+pit,pit_duration,iqr,12.8,36.8,177.0,7.2274,12.8,2485.9,iqr,before,,,
+pit,lap_number,,,,,,,,domain,before,lap_number <= 0,0.0,0.0
+pit,pit_duration,,,,,,,,domain,before,pit_duration <= 0,0.0,0.0
+weather,air_temperature,iqr,7.75,39.35,0.0,0.0,14.2,34.1,iqr,before,,,
+weather,track_temperature,iqr,7.75,64.15,0.0,0.0,16.6,55.4,iqr,before,,,
+position,position,,,,,,,,domain,before,position <= 0,0.0,0.0
+session_result,position,,,,,,,,domain,before,position <= 0,0.0,0.0
+session_result,points,,,,,,,,domain,before,points < 0,0.0,0.0
+laps,lap_duration,iqr,54.2835,126.3275,3203.0,3.8068,67.012,2625.541,iqr,after,,,
+laps,lap_number,,,,,,,,domain,after,lap_number <= 0,0.0,0.0
+laps,lap_duration,,,,,,,,domain,after,lap_duration <= 0,0.0,0.0
+laps,duration_sector_1,,,,,,,,domain,after,duration_sector_1 <= 0,0.0,0.0
+laps,duration_sector_2,,,,,,,,domain,after,duration_sector_2 <= 0,0.0,0.0
+laps,duration_sector_3,,,,,,,,domain,after,duration_sector_3 <= 0,0.0,0.0
+pit,pit_duration,iqr,12.8,36.8,177.0,7.2274,12.8,2485.9,iqr,after,,,
+pit,lap_number,,,,,,,,domain,after,lap_number <= 0,0.0,0.0
+pit,pit_duration,,,,,,,,domain,after,pit_duration <= 0,0.0,0.0
+weather,air_temperature,iqr,7.75,39.35,0.0,0.0,14.2,34.1,iqr,after,,,
+weather,track_temperature,iqr,7.75,64.15,0.0,0.0,16.6,55.4,iqr,after,,,
+position,position,,,,,,,,domain,after,position <= 0,0.0,0.0
+session_result,position,,,,,,,,domain,after,position <= 0,0.0,0.0
+session_result,points,,,,,,,,domain,after,points < 0,0.0,0.0

@@ -1,0 +1,27 @@
+table_name,anomaly_type,column_name,anomaly_count,anomaly_pct,notes,stage
+meetings,unparseable_datetime,date_end,0,0.0,Non-null values that failed datetime parsing,before
+meetings,unparseable_datetime,date_start,0,0.0,Non-null values that failed datetime parsing,before
+sessions,unparseable_datetime,date_end,0,0.0,Non-null values that failed datetime parsing,before
+sessions,unparseable_datetime,date_start,0,0.0,Non-null values that failed datetime parsing,before
+sessions,date_start_after_date_end,"date_start,date_end",0,0.0,Session start after session end,before
+laps,unparseable_datetime,date_start,78,0.0927,Non-null values that failed datetime parsing,before
+laps,lap_number_decrease_within_stint,lap_number,81,0.0963,Lap number decreased when ordered within session/driver,before
+pit,unparseable_datetime,date,1,0.0408,Non-null values that failed datetime parsing,before
+pit,pit_lap_non_positive,lap_number,0,0.0,Pit stop lap should be positive,before
+weather,unparseable_datetime,date,8,0.0631,Non-null values that failed datetime parsing,before
+weather,weather_outside_session_bounds,date,4879,38.4961,Non-blocking: weather timestamp outside session start/end — often API sampling or session-boundary timing (see silver_data_quality_notes.csv),before
+position,unparseable_datetime,date,33,0.0874,Non-null values that failed datetime parsing,before
+race_control,unparseable_datetime,date,197,2.7388,Non-null values that failed datetime parsing,before
+meetings,unparseable_datetime,date_end,0,0.0,Non-null values that failed datetime parsing,after
+meetings,unparseable_datetime,date_start,0,0.0,Non-null values that failed datetime parsing,after
+sessions,unparseable_datetime,date_end,0,0.0,Non-null values that failed datetime parsing,after
+sessions,unparseable_datetime,date_start,0,0.0,Non-null values that failed datetime parsing,after
+sessions,date_start_after_date_end,"date_start,date_end",0,0.0,Session start after session end,after
+laps,unparseable_datetime,date_start,78,0.0927,Non-null values that failed datetime parsing,after
+laps,lap_number_decrease_within_stint,lap_number,81,0.0963,Lap number decreased when ordered within session/driver,after
+pit,unparseable_datetime,date,1,0.0408,Non-null values that failed datetime parsing,after
+pit,pit_lap_non_positive,lap_number,0,0.0,Pit stop lap should be positive,after
+weather,unparseable_datetime,date,0,0.0,Non-null values that failed datetime parsing,after
+weather,weather_outside_session_bounds,date,4884,38.5356,Non-blocking: weather timestamp outside session start/end — often API sampling or session-boundary timing (see silver_data_quality_notes.csv),after
+position,unparseable_datetime,date,0,0.0,Non-null values that failed datetime parsing,after
+race_control,unparseable_datetime,date,0,0.0,Non-null values that failed datetime parsing,after

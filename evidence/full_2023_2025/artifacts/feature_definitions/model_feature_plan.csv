@@ -1,0 +1,63 @@
+feature_name,feature_tier,feature_group,default_include,allowed_for_modeling,reason
+driver_number,none,identifiers,False,False,Grain key; never in model X.
+meeting_key,none,identifiers,False,False,Grain key; never in model X.
+session_key,none,identifiers,False,False,Grain key; never in model X.
+points_finish,none,target,False,False,Binary target: points_finish.
+diagnostic_final_observed_position,none,diagnostic_outcome,False,False,Post-race outcome for evaluation only; not for modeling.
+final_position,none,diagnostic_outcome,False,False,Post-race outcome for evaluation only; not for modeling.
+result_dnf,none,diagnostic_outcome,False,False,Post-race outcome for evaluation only; not for modeling.
+result_dns,none,diagnostic_outcome,False,False,Post-race outcome for evaluation only; not for modeling.
+result_dsq,none,diagnostic_outcome,False,False,Post-race outcome for evaluation only; not for modeling.
+result_points,none,diagnostic_outcome,False,False,Post-race outcome for evaluation only; not for modeling.
+avg_first5_lap_duration,tier1_early,laps,True,True,Default numeric model feature (Tier 1 early-session).
+best_first5_lap_duration,tier1_early,laps,True,True,Default numeric model feature (Tier 1 early-session).
+std_first5_lap_duration,tier1_early,laps,True,True,Default numeric model feature (Tier 1 early-session).
+first_observed_position,tier1_early,position,True,True,Default numeric model feature (Tier 1 early-session).
+early_avg_position,tier1_early,position,True,True,Default numeric model feature (Tier 1 early-session).
+early_min_position,tier1_early,position,True,True,Default numeric model feature (Tier 1 early-session).
+early_max_position,tier1_early,position,True,True,Default numeric model feature (Tier 1 early-session).
+position_observation_count,tier1_early,position,True,True,Default numeric model feature (Tier 1 early-session).
+lap_count,tier2_full_session,laps,True,True,Default numeric model feature (Tier 2 full-session analytical).
+avg_lap_duration,tier2_full_session,laps,True,True,Default numeric model feature (Tier 2 full-session analytical).
+median_lap_duration,tier2_full_session,laps,True,True,Default numeric model feature (Tier 2 full-session analytical).
+best_lap_duration,tier2_full_session,laps,True,True,Default numeric model feature (Tier 2 full-session analytical).
+std_lap_duration,tier2_full_session,laps,True,True,Default numeric model feature (Tier 2 full-session analytical).
+avg_sector_1,tier2_full_session,laps,True,True,Default numeric model feature (Tier 2 full-session analytical).
+avg_sector_2,tier2_full_session,laps,True,True,Default numeric model feature (Tier 2 full-session analytical).
+avg_sector_3,tier2_full_session,laps,True,True,Default numeric model feature (Tier 2 full-session analytical).
+avg_i1_speed,tier2_full_session,laps,True,True,Default numeric model feature (Tier 2 full-session analytical).
+avg_i2_speed,tier2_full_session,laps,True,True,Default numeric model feature (Tier 2 full-session analytical).
+avg_st_speed,tier2_full_session,laps,True,True,Default numeric model feature (Tier 2 full-session analytical).
+pit_out_lap_count,tier2_full_session,laps,True,True,Default numeric model feature (Tier 2 full-session analytical).
+pit_stop_count,tier2_full_session,pit,True,True,Default numeric model feature (Tier 2 full-session analytical).
+avg_pit_duration,tier2_full_session,pit,True,True,Default numeric model feature (Tier 2 full-session analytical).
+min_pit_duration,tier2_full_session,pit,True,True,Default numeric model feature (Tier 2 full-session analytical).
+max_pit_duration,tier2_full_session,pit,True,True,Default numeric model feature (Tier 2 full-session analytical).
+first_pit_lap,tier2_full_session,pit,True,True,Default numeric model feature (Tier 2 full-session analytical).
+early_pit_stop_flag,tier2_full_session,pit,True,True,Default numeric model feature (Tier 2 full-session analytical).
+avg_air_temperature,tier2_full_session,weather,True,True,Default numeric model feature (Tier 2 full-session analytical).
+avg_track_temperature,tier2_full_session,weather,True,True,Default numeric model feature (Tier 2 full-session analytical).
+avg_humidity,tier2_full_session,weather,True,True,Default numeric model feature (Tier 2 full-session analytical).
+avg_pressure,tier2_full_session,weather,True,True,Default numeric model feature (Tier 2 full-session analytical).
+avg_wind_speed,tier2_full_session,weather,True,True,Default numeric model feature (Tier 2 full-session analytical).
+rainfall_mean,tier2_full_session,weather,True,True,Default numeric model feature (Tier 2 full-session analytical).
+rainfall_flag,tier2_full_session,weather,True,True,Default numeric model feature (Tier 2 full-session analytical).
+race_control_message_count,tier2_full_session,race_control,True,True,Default numeric model feature (Tier 2 full-session analytical).
+flag_message_count,tier2_full_session,race_control,True,True,Default numeric model feature (Tier 2 full-session analytical).
+yellow_flag_count,tier2_full_session,race_control,True,True,Default numeric model feature (Tier 2 full-session analytical).
+red_flag_count,tier2_full_session,race_control,True,True,Default numeric model feature (Tier 2 full-session analytical).
+green_flag_count,tier2_full_session,race_control,True,True,Default numeric model feature (Tier 2 full-session analytical).
+safety_car_message_count,tier2_full_session,race_control,True,True,Default numeric model feature (Tier 2 full-session analytical).
+pit_exit_message_count,tier2_full_session,race_control,True,True,Default numeric model feature (Tier 2 full-session analytical).
+team_name,none,metadata,False,True,Optional categorical metadata; encode explicitly if used.
+circuit_short_name,none,metadata,False,True,Optional categorical metadata; encode explicitly if used.
+session_country_name,none,metadata,False,True,Optional categorical metadata; encode explicitly if used.
+location,none,metadata,False,True,Optional categorical metadata; encode explicitly if used.
+session_type,none,metadata,False,True,Optional categorical metadata; encode explicitly if used.
+session_name,none,metadata,False,True,Optional categorical metadata; encode explicitly if used.
+session_year,none,metadata,False,True,Optional metadata; default_exclude — season split leakage if used as feature.
+circuit_key,none,metadata,False,False,Metadata; not in default model bundle.
+driver_country_code,none,metadata,False,False,Metadata; not in default model bundle.
+full_name,none,metadata,False,False,Metadata; not in default model bundle.
+meeting_name,none,metadata,False,False,Metadata; not in default model bundle.
+name_acronym,none,metadata,False,False,Metadata; not in default model bundle.

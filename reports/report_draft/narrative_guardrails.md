@@ -51,8 +51,14 @@ Explain two tiers in Chapter 5 and Chapter 6:
 | Pattern | Typical cause | Report stance |
 |---------|---------------|-----------------|
 | `race_control` without `driver_number` | Session-level messages | Structural — document, do not impute as driver error |
+| `race_control.qualifying_phase` | Known 100 % null in current OpenF1 pull | Structural — ignored by Gold; race-control features use `message` and `flag` only |
+| `race_control` duplicate diagnostic groups | Event-stream rebroadcasts, multi-driver messages | Retained on purpose (`SIL_RC_DUP_CHECK_RETAINED` in `silver_cleaning_rules.csv`); also noted in `silver_data_quality_notes.csv` |
 | `pit.stop_duration` null | API / event structure | Often structural — see `silver_data_quality_notes.csv` |
-| `starting_grid` empty | Endpoint 404 or no qual data in scope | Optional endpoint — heuristic baseline uses early position, not grid |
+| Gold `avg_pit_duration`, `min_pit_duration`, `max_pit_duration`, `first_pit_lap` ~25 % missing | Driver-races with zero pit stops | Structural — pit *count* is zero-filled; pit *duration* aggregates correctly stay NaN because the set of stops is empty |
+| `starting_grid` empty | Endpoint 404 or no qual data in scope | Optional endpoint — heuristic baseline uses `first_observed_position` (Tier 1) as the early-race position proxy, not grid |
+| Gold `driver_country_code` ~34 % missing | OpenF1 drivers endpoint frequently omits country code for older sessions | Metadata only; excluded from model `X` by `model_feature_plan.csv` (`default_include=False`, `allowed_for_modeling=False`); not a feature-quality problem |
+| Gold `final_position` ~10 % missing | DNF drivers — no classified position | Diagnostic outcome blocked from features by leakage guard; never enters `X` |
+| Gold `lap_count`, `pit_out_lap_count` 0.17 % missing (pre-fix) | 3 DNS drivers with no laps recorded | Safe Gold cleanup added these to `EVENT_ABSENCE_ZERO_COLS` so the rebuild zero-fills them; **post-fix Gold rerun confirms 0 % missing** for both (alongside all other count-style event-absence features) |
 | High missingness on optional joins | No pit/weather in session | Distinguish “no event” vs “bad join” |
 
 **Outliers in racing telemetry:** IQR-based flags in `silver_outlier_report.csv` are **detection**, not automatic removal. Racing lap times and speeds can be legitimately extreme.
@@ -92,13 +98,23 @@ Tier 2 features are **engineered aggregates**, not raw finishing outcomes.
 
 ## G. Placeholder convention for pending full run
 
-When full-run artifacts are missing, use explicit placeholders in tables and prose:
+When full-run artifacts are missing, use explicit placeholders in tables and prose. The list below has been pruned to reflect the current state — Bronze, Silver, and Gold full-run artifacts are available; only Notebook 04 modeling outputs and a few derived `reports/tables/*.csv` from Notebook 05 remain.
 
-- `[PENDING: full 2023–2025 ingest]`
-- `[PENDING: full-run Gold row count]`
-- `[PENDING: official test metrics — MODELING_MODE=full]`
-- `[PENDING: targeted retry results — RUN_TARGETED_RETRY=True]`
-- `[PENDING: post-retry target coverage]`
+**Resolved (do NOT use as placeholders any more):**
+
+- ~~`[PENDING: full 2023–2025 ingest]`~~ — Bronze full run completed; 148,184 rows.
+- ~~`[PENDING: full-run Gold row count]`~~ — Gold full run completed; 1,756 rows at driver-race grain.
+- ~~`[PENDING: targeted retry results — RUN_TARGETED_RETRY=True]`~~ — Retry executed; reconciliation runs against `ingestion_manifest_effective.csv`.
+- ~~`[PENDING: post-retry target coverage]`~~ — 88 race sessions populated in Silver `session_result` (vs goal 89).
+
+**Still active:**
+
+- `[PENDING: official test metrics — MODELING_MODE=full]` (Notebook 04)
+- `[PENDING: Notebook 04 baseline metrics]`
+- `[PENDING: confusion matrix and per-segment error analysis]` (Notebook 04 + 05)
+- `[PENDING: reproducibility artifacts table]` (Notebook 05)
+- `[PENDING: feature importance top-20]` (Notebook 04 + 05)
+- `[PENDING: Notebook 05 derived report tables under reports/tables/]`
 
 Do not interpolate or estimate final metrics from smoke runs.
 

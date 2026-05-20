@@ -1,0 +1,11 @@
+table_name,reason,rule_id,rejected_count
+meetings,No records rejected in this run,SIL_NONE,0
+sessions,No records rejected in this run,SIL_NONE,0
+drivers,No records rejected in this run,SIL_NONE,0
+laps,No records rejected in this run,SIL_NONE,0
+pit,No records rejected in this run,SIL_NONE,0
+weather,No records rejected in this run,SIL_NONE,0
+position,No records rejected in this run,SIL_NONE,0
+race_control,No records rejected in this run,SIL_NONE,0
+session_result,No records rejected in this run,SIL_NONE,0
+starting_grid,No records rejected in this run,SIL_NONE,0

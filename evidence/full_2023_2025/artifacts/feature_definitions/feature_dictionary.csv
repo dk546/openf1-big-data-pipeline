@@ -1,0 +1,63 @@
+feature_name,feature_group,feature_tier,dtype,description,source_table,modeling_role,allowed_for_modeling,missing_pct
+session_key,identifiers,none,int64,Grain key (identifiers).,session_result,identifier,False,0.0
+meeting_key,identifiers,none,int64,Grain key (identifiers).,session_result,identifier,False,0.0
+driver_number,identifiers,none,int64,Grain key (identifiers).,session_result,identifier,False,0.0
+result_dnf,diagnostic_outcome,none,bool,Post-race outcome for evaluation only; not for modeling.,session_result,diagnostic_outcome,False,0.0
+result_dns,diagnostic_outcome,none,bool,Post-race outcome for evaluation only; not for modeling.,session_result,diagnostic_outcome,False,0.0
+result_dsq,diagnostic_outcome,none,bool,Post-race outcome for evaluation only; not for modeling.,session_result,diagnostic_outcome,False,0.0
+points_finish,target,none,int32,"Binary target: 1 if driver scored points (>0), else 0.",session_result,target,False,0.0
+final_position,diagnostic_outcome,none,float64,Post-race outcome for evaluation only; not for modeling.,session_result,diagnostic_outcome,False,10.0797
+result_points,diagnostic_outcome,none,float64,Post-race outcome for evaluation only; not for modeling.,session_result,diagnostic_outcome,False,0.0
+full_name,metadata,none,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+name_acronym,metadata,none,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+team_name,metadata,none,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+driver_country_code,metadata,none,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,34.1116
+session_type,metadata,none,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+session_name,metadata,none,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+circuit_short_name,metadata,none,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+location,metadata,none,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+session_year,metadata,none,int64,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+session_country_name,metadata,none,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+meeting_name,metadata,none,object,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+circuit_key,metadata,none,int64,"Driver, session, or meeting metadata.","drivers,sessions,meetings",metadata,False,0.0
+lap_count,laps,tier2_full_session,int64,Tier 2 full-session analytical lap aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+avg_lap_duration,laps,tier2_full_session,float64,Tier 2 full-session analytical lap aggregate from Silver laps_clean.,laps,predictive_feature,True,2.4487
+median_lap_duration,laps,tier2_full_session,float64,Tier 2 full-session analytical lap aggregate from Silver laps_clean.,laps,predictive_feature,True,2.4487
+best_lap_duration,laps,tier2_full_session,float64,Tier 2 full-session analytical lap aggregate from Silver laps_clean.,laps,predictive_feature,True,2.4487
+std_lap_duration,laps,tier2_full_session,float64,Tier 2 full-session analytical lap aggregate from Silver laps_clean.,laps,predictive_feature,True,2.7904
+avg_sector_1,laps,tier2_full_session,float64,Tier 2 full-session analytical lap aggregate from Silver laps_clean.,laps,predictive_feature,True,2.4487
+avg_sector_2,laps,tier2_full_session,float64,Tier 2 full-session analytical lap aggregate from Silver laps_clean.,laps,predictive_feature,True,2.221
+avg_sector_3,laps,tier2_full_session,float64,Tier 2 full-session analytical lap aggregate from Silver laps_clean.,laps,predictive_feature,True,2.4487
+avg_i1_speed,laps,tier2_full_session,float64,Tier 2 full-session analytical lap aggregate from Silver laps_clean.,laps,predictive_feature,True,1.8793
+avg_i2_speed,laps,tier2_full_session,float64,Tier 2 full-session analytical lap aggregate from Silver laps_clean.,laps,predictive_feature,True,3.303
+avg_st_speed,laps,tier2_full_session,float64,Tier 2 full-session analytical lap aggregate from Silver laps_clean.,laps,predictive_feature,True,1.5945
+pit_out_lap_count,laps,tier2_full_session,int64,Tier 2 full-session analytical lap aggregate from Silver laps_clean.,laps,predictive_feature,True,0.0
+avg_first5_lap_duration,laps,tier1_early,float64,Tier 1 early-session lap aggregate (first five laps) from Silver laps_clean.,laps,predictive_feature,True,2.4487
+best_first5_lap_duration,laps,tier1_early,float64,Tier 1 early-session lap aggregate (first five laps) from Silver laps_clean.,laps,predictive_feature,True,2.4487
+std_first5_lap_duration,laps,tier1_early,float64,Tier 1 early-session lap aggregate (first five laps) from Silver laps_clean.,laps,predictive_feature,True,3.8724
+pit_stop_count,pit,tier2_full_session,int64,Tier 2 full-session analytical pit aggregate from Silver pit_clean.,pit,predictive_feature,True,0.0
+avg_pit_duration,pit,tier2_full_session,float64,Tier 2 full-session analytical pit aggregate from Silver pit_clean.,pit,predictive_feature,True,25.7973
+min_pit_duration,pit,tier2_full_session,float64,Tier 2 full-session analytical pit aggregate from Silver pit_clean.,pit,predictive_feature,True,25.7973
+max_pit_duration,pit,tier2_full_session,float64,Tier 2 full-session analytical pit aggregate from Silver pit_clean.,pit,predictive_feature,True,25.7973
+first_pit_lap,pit,tier2_full_session,float64,Tier 2 full-session analytical pit aggregate from Silver pit_clean.,pit,predictive_feature,True,25.7973
+early_pit_stop_flag,pit,tier2_full_session,int32,Tier 2 full-session analytical pit aggregate from Silver pit_clean.,pit,predictive_feature,True,0.0
+first_observed_position,position,tier1_early,int64,Tier 1 early-session position aggregate (first five observations).,position,predictive_feature,True,0.0
+early_avg_position,position,tier1_early,float64,Tier 1 early-session position aggregate (first five observations).,position,predictive_feature,True,0.0
+early_min_position,position,tier1_early,int64,Tier 1 early-session position aggregate (first five observations).,position,predictive_feature,True,0.0
+early_max_position,position,tier1_early,int64,Tier 1 early-session position aggregate (first five observations).,position,predictive_feature,True,0.0
+position_observation_count,position,tier1_early,int64,Tier 1 early-session position aggregate (first five observations).,position,predictive_feature,True,0.0
+diagnostic_final_observed_position,diagnostic_outcome,none,int64,Post-race outcome for evaluation only; not for modeling.,session_result,diagnostic_outcome,False,0.0
+avg_air_temperature,weather,tier2_full_session,float64,Tier 2 full-session analytical weather aggregate joined to each driver.,weather,predictive_feature,True,0.0
+avg_track_temperature,weather,tier2_full_session,float64,Tier 2 full-session analytical weather aggregate joined to each driver.,weather,predictive_feature,True,0.0
+avg_humidity,weather,tier2_full_session,float64,Tier 2 full-session analytical weather aggregate joined to each driver.,weather,predictive_feature,True,0.0
+avg_pressure,weather,tier2_full_session,float64,Tier 2 full-session analytical weather aggregate joined to each driver.,weather,predictive_feature,True,0.0
+avg_wind_speed,weather,tier2_full_session,float64,Tier 2 full-session analytical weather aggregate joined to each driver.,weather,predictive_feature,True,0.0
+rainfall_mean,weather,tier2_full_session,float64,Tier 2 full-session analytical weather aggregate joined to each driver.,weather,predictive_feature,True,0.0
+rainfall_flag,weather,tier2_full_session,int32,Tier 2 full-session analytical weather aggregate joined to each driver.,weather,predictive_feature,True,0.0
+race_control_message_count,race_control,tier2_full_session,int64,Tier 2 full-session analytical race control message counts.,race_control,predictive_feature,True,0.0
+flag_message_count,race_control,tier2_full_session,int64,Tier 2 full-session analytical race control message counts.,race_control,predictive_feature,True,0.0
+yellow_flag_count,race_control,tier2_full_session,int64,Tier 2 full-session analytical race control message counts.,race_control,predictive_feature,True,0.0
+red_flag_count,race_control,tier2_full_session,int64,Tier 2 full-session analytical race control message counts.,race_control,predictive_feature,True,0.0
+green_flag_count,race_control,tier2_full_session,int64,Tier 2 full-session analytical race control message counts.,race_control,predictive_feature,True,0.0
+safety_car_message_count,race_control,tier2_full_session,int64,Tier 2 full-session analytical race control message counts.,race_control,predictive_feature,True,0.0
+pit_exit_message_count,race_control,tier2_full_session,int64,Tier 2 full-session analytical race control message counts.,race_control,predictive_feature,True,0.0

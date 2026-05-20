@@ -1,0 +1,4 @@
+reconciliation_status,row_count
+matched,609
+optional_missing,89
+manifest_failed_no_file,20

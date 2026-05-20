@@ -1,0 +1,10 @@
+endpoint,files,total_bytes
+drivers,88,745362.0
+laps,88,43979658.0
+meetings,3,58876.0
+pit,75,477319.0
+position,88,4667720.0
+race_control,88,2015206.0
+session_result,88,358538.0
+sessions,3,143779.0
+weather,88,2958241.0
