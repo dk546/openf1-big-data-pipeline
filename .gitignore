@@ -69,6 +69,14 @@ data/gold/**/*
 data/**/*.json
 data/**/*.csv
 
+# Evidence snapshots: ignore raw/processed data layers (Bronze JSONL, Silver/Gold Parquet,
+# Spark markers like _SUCCESS and *.crc). The lightweight reports under
+# evidence/<run>/reports/data_quality/ and manifests / feature definitions under
+# evidence/<run>/artifacts/ stay tracked.
+evidence/*/data/bronze/
+evidence/*/data/silver/
+evidence/*/data/gold/
+
 # Large model binaries (allow small exports in reports/)
 models/
 *.pkl
