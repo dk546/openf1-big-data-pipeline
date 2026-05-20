@@ -72,6 +72,8 @@ METADATA_COLUMNS = frozenset(
 EVENT_ABSENCE_ZERO_COLS = [
     "pit_stop_count",
     "early_pit_stop_flag",
+    "lap_count",
+    "pit_out_lap_count",
     "race_control_message_count",
     "flag_message_count",
     "yellow_flag_count",
