@@ -1,0 +1,808 @@
+model_name,split,error_type,group_column,group_value,count
+random_baseline,validation,false_positive,team_name,Alpine,22
+random_baseline,validation,false_positive,team_name,Aston Martin,18
+random_baseline,validation,false_positive,team_name,Ferrari,4
+random_baseline,validation,false_positive,team_name,Haas F1 Team,12
+random_baseline,validation,false_positive,team_name,Kick Sauber,27
+random_baseline,validation,false_positive,team_name,McLaren,3
+random_baseline,validation,false_positive,team_name,Mercedes,6
+random_baseline,validation,false_positive,team_name,RB,25
+random_baseline,validation,false_positive,team_name,Red Bull Racing,4
+random_baseline,validation,false_positive,team_name,Williams,24
+random_baseline,validation,false_positive,circuit_short_name,Austin,10
+random_baseline,validation,false_positive,circuit_short_name,Baku,7
+random_baseline,validation,false_positive,circuit_short_name,Catalunya,6
+random_baseline,validation,false_positive,circuit_short_name,Hungaroring,7
+random_baseline,validation,false_positive,circuit_short_name,Imola,5
+random_baseline,validation,false_positive,circuit_short_name,Interlagos,12
+random_baseline,validation,false_positive,circuit_short_name,Jeddah,2
+random_baseline,validation,false_positive,circuit_short_name,Las Vegas,4
+random_baseline,validation,false_positive,circuit_short_name,Lusail,7
+random_baseline,validation,false_positive,circuit_short_name,Melbourne,3
+random_baseline,validation,false_positive,circuit_short_name,Mexico City,6
+random_baseline,validation,false_positive,circuit_short_name,Miami,13
+random_baseline,validation,false_positive,circuit_short_name,Monte Carlo,5
+random_baseline,validation,false_positive,circuit_short_name,Montreal,4
+random_baseline,validation,false_positive,circuit_short_name,Monza,2
+random_baseline,validation,false_positive,circuit_short_name,Sakhir,6
+random_baseline,validation,false_positive,circuit_short_name,Shanghai,6
+random_baseline,validation,false_positive,circuit_short_name,Silverstone,5
+random_baseline,validation,false_positive,circuit_short_name,Singapore,2
+random_baseline,validation,false_positive,circuit_short_name,Spa-Francorchamps,4
+random_baseline,validation,false_positive,circuit_short_name,Spielberg,12
+random_baseline,validation,false_positive,circuit_short_name,Suzuka,5
+random_baseline,validation,false_positive,circuit_short_name,Yas Marina Circuit,5
+random_baseline,validation,false_positive,circuit_short_name,Zandvoort,7
+random_baseline,validation,false_positive,session_year,2024,145
+random_baseline,validation,false_positive,_position_bin,1-5,4
+random_baseline,validation,false_positive,_position_bin,6-10,24
+random_baseline,validation,false_positive,_position_bin,11-15,55
+random_baseline,validation,false_positive,_position_bin,16-20,62
+random_baseline,validation,false_positive,_position_bin,21+,0
+random_baseline,validation,false_negative,team_name,Alpine,10
+random_baseline,validation,false_negative,team_name,Aston Martin,14
+random_baseline,validation,false_negative,team_name,Ferrari,27
+random_baseline,validation,false_negative,team_name,Haas F1 Team,12
+random_baseline,validation,false_negative,team_name,Kick Sauber,1
+random_baseline,validation,false_negative,team_name,McLaren,30
+random_baseline,validation,false_negative,team_name,Mercedes,23
+random_baseline,validation,false_negative,team_name,RB,9
+random_baseline,validation,false_negative,team_name,Red Bull Racing,28
+random_baseline,validation,false_negative,team_name,Williams,2
+random_baseline,validation,false_negative,circuit_short_name,Austin,9
+random_baseline,validation,false_negative,circuit_short_name,Baku,4
+random_baseline,validation,false_negative,circuit_short_name,Catalunya,5
+random_baseline,validation,false_negative,circuit_short_name,Hungaroring,6
+random_baseline,validation,false_negative,circuit_short_name,Imola,6
+random_baseline,validation,false_negative,circuit_short_name,Interlagos,12
+random_baseline,validation,false_negative,circuit_short_name,Jeddah,5
+random_baseline,validation,false_negative,circuit_short_name,Las Vegas,5
+random_baseline,validation,false_negative,circuit_short_name,Lusail,11
+random_baseline,validation,false_negative,circuit_short_name,Melbourne,4
+random_baseline,validation,false_negative,circuit_short_name,Mexico City,5
+random_baseline,validation,false_negative,circuit_short_name,Miami,7
+random_baseline,validation,false_negative,circuit_short_name,Monte Carlo,5
+random_baseline,validation,false_negative,circuit_short_name,Montreal,8
+random_baseline,validation,false_negative,circuit_short_name,Monza,4
+random_baseline,validation,false_negative,circuit_short_name,Sakhir,5
+random_baseline,validation,false_negative,circuit_short_name,Shanghai,8
+random_baseline,validation,false_negative,circuit_short_name,Silverstone,6
+random_baseline,validation,false_negative,circuit_short_name,Singapore,7
+random_baseline,validation,false_negative,circuit_short_name,Spa-Francorchamps,7
+random_baseline,validation,false_negative,circuit_short_name,Spielberg,10
+random_baseline,validation,false_negative,circuit_short_name,Suzuka,6
+random_baseline,validation,false_negative,circuit_short_name,Yas Marina Circuit,6
+random_baseline,validation,false_negative,circuit_short_name,Zandvoort,5
+random_baseline,validation,false_negative,session_year,2024,156
+random_baseline,validation,false_negative,_position_bin,1-5,77
+random_baseline,validation,false_negative,_position_bin,6-10,54
+random_baseline,validation,false_negative,_position_bin,11-15,19
+random_baseline,validation,false_negative,_position_bin,16-20,6
+random_baseline,validation,false_negative,_position_bin,21+,0
+majority_baseline,validation,false_positive,_position_bin,1-5,0
+majority_baseline,validation,false_positive,_position_bin,6-10,0
+majority_baseline,validation,false_positive,_position_bin,11-15,0
+majority_baseline,validation,false_positive,_position_bin,16-20,0
+majority_baseline,validation,false_positive,_position_bin,21+,0
+majority_baseline,validation,false_negative,team_name,Alpine,15
+majority_baseline,validation,false_negative,team_name,Aston Martin,20
+majority_baseline,validation,false_negative,team_name,Ferrari,54
+majority_baseline,validation,false_negative,team_name,Haas F1 Team,20
+majority_baseline,validation,false_negative,team_name,Kick Sauber,1
+majority_baseline,validation,false_negative,team_name,McLaren,56
+majority_baseline,validation,false_negative,team_name,Mercedes,51
+majority_baseline,validation,false_negative,team_name,RB,16
+majority_baseline,validation,false_negative,team_name,Red Bull Racing,49
+majority_baseline,validation,false_negative,team_name,Williams,6
+majority_baseline,validation,false_negative,circuit_short_name,Austin,18
+majority_baseline,validation,false_negative,circuit_short_name,Baku,10
+majority_baseline,validation,false_negative,circuit_short_name,Catalunya,10
+majority_baseline,validation,false_negative,circuit_short_name,Hungaroring,10
+majority_baseline,validation,false_negative,circuit_short_name,Imola,10
+majority_baseline,validation,false_negative,circuit_short_name,Interlagos,18
+majority_baseline,validation,false_negative,circuit_short_name,Jeddah,10
+majority_baseline,validation,false_negative,circuit_short_name,Las Vegas,10
+majority_baseline,validation,false_negative,circuit_short_name,Lusail,18
+majority_baseline,validation,false_negative,circuit_short_name,Melbourne,10
+majority_baseline,validation,false_negative,circuit_short_name,Mexico City,10
+majority_baseline,validation,false_negative,circuit_short_name,Miami,18
+majority_baseline,validation,false_negative,circuit_short_name,Monte Carlo,10
+majority_baseline,validation,false_negative,circuit_short_name,Montreal,10
+majority_baseline,validation,false_negative,circuit_short_name,Monza,10
+majority_baseline,validation,false_negative,circuit_short_name,Sakhir,10
+majority_baseline,validation,false_negative,circuit_short_name,Shanghai,18
+majority_baseline,validation,false_negative,circuit_short_name,Silverstone,10
+majority_baseline,validation,false_negative,circuit_short_name,Singapore,10
+majority_baseline,validation,false_negative,circuit_short_name,Spa-Francorchamps,10
+majority_baseline,validation,false_negative,circuit_short_name,Spielberg,18
+majority_baseline,validation,false_negative,circuit_short_name,Suzuka,10
+majority_baseline,validation,false_negative,circuit_short_name,Yas Marina Circuit,10
+majority_baseline,validation,false_negative,circuit_short_name,Zandvoort,10
+majority_baseline,validation,false_negative,session_year,2024,288
+majority_baseline,validation,false_negative,_position_bin,1-5,143
+majority_baseline,validation,false_negative,_position_bin,6-10,103
+majority_baseline,validation,false_negative,_position_bin,11-15,30
+majority_baseline,validation,false_negative,_position_bin,16-20,12
+majority_baseline,validation,false_negative,_position_bin,21+,0
+heuristic_position,validation,false_positive,team_name,Alpine,6
+heuristic_position,validation,false_positive,team_name,Aston Martin,10
+heuristic_position,validation,false_positive,team_name,Ferrari,2
+heuristic_position,validation,false_positive,team_name,Haas F1 Team,6
+heuristic_position,validation,false_positive,team_name,Kick Sauber,4
+heuristic_position,validation,false_positive,team_name,McLaren,3
+heuristic_position,validation,false_positive,team_name,Mercedes,4
+heuristic_position,validation,false_positive,team_name,RB,9
+heuristic_position,validation,false_positive,team_name,Red Bull Racing,4
+heuristic_position,validation,false_positive,team_name,Williams,6
+heuristic_position,validation,false_positive,circuit_short_name,Austin,6
+heuristic_position,validation,false_positive,circuit_short_name,Baku,2
+heuristic_position,validation,false_positive,circuit_short_name,Catalunya,1
+heuristic_position,validation,false_positive,circuit_short_name,Hungaroring,2
+heuristic_position,validation,false_positive,circuit_short_name,Imola,2
+heuristic_position,validation,false_positive,circuit_short_name,Interlagos,6
+heuristic_position,validation,false_positive,circuit_short_name,Jeddah,2
+heuristic_position,validation,false_positive,circuit_short_name,Las Vegas,1
+heuristic_position,validation,false_positive,circuit_short_name,Lusail,4
+heuristic_position,validation,false_positive,circuit_short_name,Melbourne,2
+heuristic_position,validation,false_positive,circuit_short_name,Mexico City,1
+heuristic_position,validation,false_positive,circuit_short_name,Miami,5
+heuristic_position,validation,false_positive,circuit_short_name,Montreal,2
+heuristic_position,validation,false_positive,circuit_short_name,Monza,1
+heuristic_position,validation,false_positive,circuit_short_name,Sakhir,1
+heuristic_position,validation,false_positive,circuit_short_name,Shanghai,4
+heuristic_position,validation,false_positive,circuit_short_name,Silverstone,1
+heuristic_position,validation,false_positive,circuit_short_name,Singapore,1
+heuristic_position,validation,false_positive,circuit_short_name,Spa-Francorchamps,2
+heuristic_position,validation,false_positive,circuit_short_name,Spielberg,5
+heuristic_position,validation,false_positive,circuit_short_name,Yas Marina Circuit,2
+heuristic_position,validation,false_positive,circuit_short_name,Zandvoort,1
+heuristic_position,validation,false_positive,session_year,2024,54
+heuristic_position,validation,false_positive,_position_bin,1-5,7
+heuristic_position,validation,false_positive,_position_bin,6-10,47
+heuristic_position,validation,false_positive,_position_bin,11-15,0
+heuristic_position,validation,false_positive,_position_bin,16-20,0
+heuristic_position,validation,false_positive,_position_bin,21+,0
+heuristic_position,validation,false_negative,team_name,Alpine,6
+heuristic_position,validation,false_negative,team_name,Aston Martin,3
+heuristic_position,validation,false_negative,team_name,Ferrari,2
+heuristic_position,validation,false_negative,team_name,Haas F1 Team,6
+heuristic_position,validation,false_negative,team_name,Kick Sauber,1
+heuristic_position,validation,false_negative,team_name,McLaren,2
+heuristic_position,validation,false_negative,team_name,Mercedes,8
+heuristic_position,validation,false_negative,team_name,RB,5
+heuristic_position,validation,false_negative,team_name,Red Bull Racing,8
+heuristic_position,validation,false_negative,team_name,Williams,1
+heuristic_position,validation,false_negative,circuit_short_name,Austin,4
+heuristic_position,validation,false_negative,circuit_short_name,Baku,2
+heuristic_position,validation,false_negative,circuit_short_name,Catalunya,1
+heuristic_position,validation,false_negative,circuit_short_name,Hungaroring,2
+heuristic_position,validation,false_negative,circuit_short_name,Imola,2
+heuristic_position,validation,false_negative,circuit_short_name,Interlagos,4
+heuristic_position,validation,false_negative,circuit_short_name,Jeddah,2
+heuristic_position,validation,false_negative,circuit_short_name,Las Vegas,1
+heuristic_position,validation,false_negative,circuit_short_name,Lusail,2
+heuristic_position,validation,false_negative,circuit_short_name,Melbourne,2
+heuristic_position,validation,false_negative,circuit_short_name,Mexico City,1
+heuristic_position,validation,false_negative,circuit_short_name,Miami,3
+heuristic_position,validation,false_negative,circuit_short_name,Montreal,2
+heuristic_position,validation,false_negative,circuit_short_name,Monza,1
+heuristic_position,validation,false_negative,circuit_short_name,Sakhir,1
+heuristic_position,validation,false_negative,circuit_short_name,Shanghai,2
+heuristic_position,validation,false_negative,circuit_short_name,Silverstone,1
+heuristic_position,validation,false_negative,circuit_short_name,Singapore,1
+heuristic_position,validation,false_negative,circuit_short_name,Spa-Francorchamps,2
+heuristic_position,validation,false_negative,circuit_short_name,Spielberg,3
+heuristic_position,validation,false_negative,circuit_short_name,Yas Marina Circuit,2
+heuristic_position,validation,false_negative,circuit_short_name,Zandvoort,1
+heuristic_position,validation,false_negative,session_year,2024,42
+heuristic_position,validation,false_negative,_position_bin,1-5,0
+heuristic_position,validation,false_negative,_position_bin,6-10,0
+heuristic_position,validation,false_negative,_position_bin,11-15,30
+heuristic_position,validation,false_negative,_position_bin,16-20,12
+heuristic_position,validation,false_negative,_position_bin,21+,0
+random_baseline,test,false_positive,team_name,Alpine,24
+random_baseline,test,false_positive,team_name,Aston Martin,17
+random_baseline,test,false_positive,team_name,Ferrari,4
+random_baseline,test,false_positive,team_name,Haas F1 Team,22
+random_baseline,test,false_positive,team_name,Kick Sauber,20
+random_baseline,test,false_positive,team_name,McLaren,3
+random_baseline,test,false_positive,team_name,Mercedes,8
+random_baseline,test,false_positive,team_name,Racing Bulls,15
+random_baseline,test,false_positive,team_name,Red Bull Racing,13
+random_baseline,test,false_positive,team_name,Williams,19
+random_baseline,test,false_positive,circuit_short_name,Austin,9
+random_baseline,test,false_positive,circuit_short_name,Baku,3
+random_baseline,test,false_positive,circuit_short_name,Catalunya,6
+random_baseline,test,false_positive,circuit_short_name,Hungaroring,5
+random_baseline,test,false_positive,circuit_short_name,Imola,6
+random_baseline,test,false_positive,circuit_short_name,Interlagos,15
+random_baseline,test,false_positive,circuit_short_name,Jeddah,6
+random_baseline,test,false_positive,circuit_short_name,Las Vegas,3
+random_baseline,test,false_positive,circuit_short_name,Lusail,6
+random_baseline,test,false_positive,circuit_short_name,Melbourne,7
+random_baseline,test,false_positive,circuit_short_name,Mexico City,6
+random_baseline,test,false_positive,circuit_short_name,Miami,6
+random_baseline,test,false_positive,circuit_short_name,Monte Carlo,4
+random_baseline,test,false_positive,circuit_short_name,Montreal,6
+random_baseline,test,false_positive,circuit_short_name,Monza,6
+random_baseline,test,false_positive,circuit_short_name,Sakhir,7
+random_baseline,test,false_positive,circuit_short_name,Shanghai,8
+random_baseline,test,false_positive,circuit_short_name,Silverstone,2
+random_baseline,test,false_positive,circuit_short_name,Singapore,6
+random_baseline,test,false_positive,circuit_short_name,Spa-Francorchamps,12
+random_baseline,test,false_positive,circuit_short_name,Spielberg,2
+random_baseline,test,false_positive,circuit_short_name,Suzuka,5
+random_baseline,test,false_positive,circuit_short_name,Yas Marina Circuit,6
+random_baseline,test,false_positive,circuit_short_name,Zandvoort,3
+random_baseline,test,false_positive,session_year,2025,145
+random_baseline,test,false_positive,_position_bin,1-5,4
+random_baseline,test,false_positive,_position_bin,6-10,28
+random_baseline,test,false_positive,_position_bin,11-15,56
+random_baseline,test,false_positive,_position_bin,16-20,57
+random_baseline,test,false_positive,_position_bin,21+,0
+random_baseline,test,false_negative,team_name,Alpine,4
+random_baseline,test,false_negative,team_name,Aston Martin,8
+random_baseline,test,false_negative,team_name,Ferrari,27
+random_baseline,test,false_negative,team_name,Haas F1 Team,13
+random_baseline,test,false_negative,team_name,Kick Sauber,7
+random_baseline,test,false_negative,team_name,McLaren,32
+random_baseline,test,false_negative,team_name,Mercedes,22
+random_baseline,test,false_negative,team_name,Racing Bulls,12
+random_baseline,test,false_negative,team_name,Red Bull Racing,20
+random_baseline,test,false_negative,team_name,Williams,11
+random_baseline,test,false_negative,circuit_short_name,Austin,10
+random_baseline,test,false_negative,circuit_short_name,Baku,5
+random_baseline,test,false_negative,circuit_short_name,Catalunya,7
+random_baseline,test,false_negative,circuit_short_name,Hungaroring,5
+random_baseline,test,false_negative,circuit_short_name,Imola,7
+random_baseline,test,false_negative,circuit_short_name,Interlagos,9
+random_baseline,test,false_negative,circuit_short_name,Jeddah,5
+random_baseline,test,false_negative,circuit_short_name,Las Vegas,4
+random_baseline,test,false_negative,circuit_short_name,Lusail,9
+random_baseline,test,false_negative,circuit_short_name,Melbourne,9
+random_baseline,test,false_negative,circuit_short_name,Mexico City,8
+random_baseline,test,false_negative,circuit_short_name,Miami,11
+random_baseline,test,false_negative,circuit_short_name,Monte Carlo,7
+random_baseline,test,false_negative,circuit_short_name,Montreal,3
+random_baseline,test,false_negative,circuit_short_name,Monza,5
+random_baseline,test,false_negative,circuit_short_name,Sakhir,6
+random_baseline,test,false_negative,circuit_short_name,Shanghai,8
+random_baseline,test,false_negative,circuit_short_name,Silverstone,6
+random_baseline,test,false_negative,circuit_short_name,Singapore,4
+random_baseline,test,false_negative,circuit_short_name,Spa-Francorchamps,8
+random_baseline,test,false_negative,circuit_short_name,Spielberg,5
+random_baseline,test,false_negative,circuit_short_name,Suzuka,8
+random_baseline,test,false_negative,circuit_short_name,Yas Marina Circuit,2
+random_baseline,test,false_negative,circuit_short_name,Zandvoort,5
+random_baseline,test,false_negative,session_year,2025,156
+random_baseline,test,false_negative,_position_bin,1-5,85
+random_baseline,test,false_negative,_position_bin,6-10,45
+random_baseline,test,false_negative,_position_bin,11-15,16
+random_baseline,test,false_negative,_position_bin,16-20,10
+random_baseline,test,false_negative,_position_bin,21+,0
+majority_baseline,test,false_positive,_position_bin,1-5,0
+majority_baseline,test,false_positive,_position_bin,6-10,0
+majority_baseline,test,false_positive,_position_bin,11-15,0
+majority_baseline,test,false_positive,_position_bin,16-20,0
+majority_baseline,test,false_positive,_position_bin,21+,0
+majority_baseline,test,false_negative,team_name,Alpine,7
+majority_baseline,test,false_negative,team_name,Aston Martin,19
+majority_baseline,test,false_negative,team_name,Ferrari,47
+majority_baseline,test,false_negative,team_name,Haas F1 Team,20
+majority_baseline,test,false_negative,team_name,Kick Sauber,14
+majority_baseline,test,false_negative,team_name,McLaren,52
+majority_baseline,test,false_negative,team_name,Mercedes,47
+majority_baseline,test,false_negative,team_name,Racing Bulls,19
+majority_baseline,test,false_negative,team_name,Red Bull Racing,38
+majority_baseline,test,false_negative,team_name,Williams,25
+majority_baseline,test,false_negative,circuit_short_name,Austin,18
+majority_baseline,test,false_negative,circuit_short_name,Baku,10
+majority_baseline,test,false_negative,circuit_short_name,Catalunya,10
+majority_baseline,test,false_negative,circuit_short_name,Hungaroring,10
+majority_baseline,test,false_negative,circuit_short_name,Imola,10
+majority_baseline,test,false_negative,circuit_short_name,Interlagos,18
+majority_baseline,test,false_negative,circuit_short_name,Jeddah,10
+majority_baseline,test,false_negative,circuit_short_name,Las Vegas,10
+majority_baseline,test,false_negative,circuit_short_name,Lusail,18
+majority_baseline,test,false_negative,circuit_short_name,Melbourne,10
+majority_baseline,test,false_negative,circuit_short_name,Mexico City,10
+majority_baseline,test,false_negative,circuit_short_name,Miami,18
+majority_baseline,test,false_negative,circuit_short_name,Monte Carlo,10
+majority_baseline,test,false_negative,circuit_short_name,Montreal,10
+majority_baseline,test,false_negative,circuit_short_name,Monza,10
+majority_baseline,test,false_negative,circuit_short_name,Sakhir,10
+majority_baseline,test,false_negative,circuit_short_name,Shanghai,18
+majority_baseline,test,false_negative,circuit_short_name,Silverstone,10
+majority_baseline,test,false_negative,circuit_short_name,Singapore,10
+majority_baseline,test,false_negative,circuit_short_name,Spa-Francorchamps,18
+majority_baseline,test,false_negative,circuit_short_name,Spielberg,10
+majority_baseline,test,false_negative,circuit_short_name,Suzuka,10
+majority_baseline,test,false_negative,circuit_short_name,Yas Marina Circuit,10
+majority_baseline,test,false_negative,circuit_short_name,Zandvoort,10
+majority_baseline,test,false_negative,session_year,2025,288
+majority_baseline,test,false_negative,_position_bin,1-5,137
+majority_baseline,test,false_negative,_position_bin,6-10,91
+majority_baseline,test,false_negative,_position_bin,11-15,35
+majority_baseline,test,false_negative,_position_bin,16-20,25
+majority_baseline,test,false_negative,_position_bin,21+,0
+heuristic_position,test,false_positive,team_name,Alpine,8
+heuristic_position,test,false_positive,team_name,Aston Martin,9
+heuristic_position,test,false_positive,team_name,Ferrari,8
+heuristic_position,test,false_positive,team_name,Haas F1 Team,1
+heuristic_position,test,false_positive,team_name,Kick Sauber,4
+heuristic_position,test,false_positive,team_name,McLaren,8
+heuristic_position,test,false_positive,team_name,Mercedes,5
+heuristic_position,test,false_positive,team_name,Racing Bulls,13
+heuristic_position,test,false_positive,team_name,Red Bull Racing,7
+heuristic_position,test,false_positive,team_name,Williams,9
+heuristic_position,test,false_positive,circuit_short_name,Austin,6
+heuristic_position,test,false_positive,circuit_short_name,Baku,1
+heuristic_position,test,false_positive,circuit_short_name,Catalunya,1
+heuristic_position,test,false_positive,circuit_short_name,Hungaroring,1
+heuristic_position,test,false_positive,circuit_short_name,Imola,3
+heuristic_position,test,false_positive,circuit_short_name,Interlagos,5
+heuristic_position,test,false_positive,circuit_short_name,Jeddah,2
+heuristic_position,test,false_positive,circuit_short_name,Las Vegas,5
+heuristic_position,test,false_positive,circuit_short_name,Lusail,4
+heuristic_position,test,false_positive,circuit_short_name,Melbourne,3
+heuristic_position,test,false_positive,circuit_short_name,Mexico City,2
+heuristic_position,test,false_positive,circuit_short_name,Miami,6
+heuristic_position,test,false_positive,circuit_short_name,Monte Carlo,1
+heuristic_position,test,false_positive,circuit_short_name,Montreal,3
+heuristic_position,test,false_positive,circuit_short_name,Monza,2
+heuristic_position,test,false_positive,circuit_short_name,Sakhir,2
+heuristic_position,test,false_positive,circuit_short_name,Shanghai,6
+heuristic_position,test,false_positive,circuit_short_name,Silverstone,3
+heuristic_position,test,false_positive,circuit_short_name,Singapore,1
+heuristic_position,test,false_positive,circuit_short_name,Spa-Francorchamps,4
+heuristic_position,test,false_positive,circuit_short_name,Spielberg,3
+heuristic_position,test,false_positive,circuit_short_name,Yas Marina Circuit,3
+heuristic_position,test,false_positive,circuit_short_name,Zandvoort,5
+heuristic_position,test,false_positive,session_year,2025,72
+heuristic_position,test,false_positive,_position_bin,1-5,13
+heuristic_position,test,false_positive,_position_bin,6-10,59
+heuristic_position,test,false_positive,_position_bin,11-15,0
+heuristic_position,test,false_positive,_position_bin,16-20,0
+heuristic_position,test,false_positive,_position_bin,21+,0
+heuristic_position,test,false_negative,team_name,Alpine,3
+heuristic_position,test,false_negative,team_name,Aston Martin,7
+heuristic_position,test,false_negative,team_name,Ferrari,8
+heuristic_position,test,false_negative,team_name,Haas F1 Team,11
+heuristic_position,test,false_negative,team_name,Kick Sauber,9
+heuristic_position,test,false_negative,team_name,Mercedes,4
+heuristic_position,test,false_negative,team_name,Racing Bulls,3
+heuristic_position,test,false_negative,team_name,Red Bull Racing,7
+heuristic_position,test,false_negative,team_name,Williams,8
+heuristic_position,test,false_negative,circuit_short_name,Austin,4
+heuristic_position,test,false_negative,circuit_short_name,Baku,1
+heuristic_position,test,false_negative,circuit_short_name,Catalunya,1
+heuristic_position,test,false_negative,circuit_short_name,Hungaroring,1
+heuristic_position,test,false_negative,circuit_short_name,Imola,3
+heuristic_position,test,false_negative,circuit_short_name,Interlagos,3
+heuristic_position,test,false_negative,circuit_short_name,Jeddah,2
+heuristic_position,test,false_negative,circuit_short_name,Las Vegas,5
+heuristic_position,test,false_negative,circuit_short_name,Lusail,2
+heuristic_position,test,false_negative,circuit_short_name,Melbourne,3
+heuristic_position,test,false_negative,circuit_short_name,Mexico City,2
+heuristic_position,test,false_negative,circuit_short_name,Miami,4
+heuristic_position,test,false_negative,circuit_short_name,Monte Carlo,1
+heuristic_position,test,false_negative,circuit_short_name,Montreal,3
+heuristic_position,test,false_negative,circuit_short_name,Monza,2
+heuristic_position,test,false_negative,circuit_short_name,Sakhir,2
+heuristic_position,test,false_negative,circuit_short_name,Shanghai,4
+heuristic_position,test,false_negative,circuit_short_name,Silverstone,3
+heuristic_position,test,false_negative,circuit_short_name,Singapore,1
+heuristic_position,test,false_negative,circuit_short_name,Spa-Francorchamps,2
+heuristic_position,test,false_negative,circuit_short_name,Spielberg,3
+heuristic_position,test,false_negative,circuit_short_name,Yas Marina Circuit,3
+heuristic_position,test,false_negative,circuit_short_name,Zandvoort,5
+heuristic_position,test,false_negative,session_year,2025,60
+heuristic_position,test,false_negative,_position_bin,1-5,0
+heuristic_position,test,false_negative,_position_bin,6-10,0
+heuristic_position,test,false_negative,_position_bin,11-15,35
+heuristic_position,test,false_negative,_position_bin,16-20,25
+heuristic_position,test,false_negative,_position_bin,21+,0
+logistic_regression,validation,false_positive,team_name,Alpine,7
+logistic_regression,validation,false_positive,team_name,Aston Martin,4
+logistic_regression,validation,false_positive,team_name,Ferrari,2
+logistic_regression,validation,false_positive,team_name,Haas F1 Team,5
+logistic_regression,validation,false_positive,team_name,Kick Sauber,6
+logistic_regression,validation,false_positive,team_name,McLaren,2
+logistic_regression,validation,false_positive,team_name,Mercedes,2
+logistic_regression,validation,false_positive,team_name,RB,9
+logistic_regression,validation,false_positive,team_name,Red Bull Racing,4
+logistic_regression,validation,false_positive,team_name,Williams,5
+logistic_regression,validation,false_positive,circuit_short_name,Austin,2
+logistic_regression,validation,false_positive,circuit_short_name,Baku,6
+logistic_regression,validation,false_positive,circuit_short_name,Hungaroring,2
+logistic_regression,validation,false_positive,circuit_short_name,Interlagos,11
+logistic_regression,validation,false_positive,circuit_short_name,Jeddah,1
+logistic_regression,validation,false_positive,circuit_short_name,Lusail,6
+logistic_regression,validation,false_positive,circuit_short_name,Mexico City,7
+logistic_regression,validation,false_positive,circuit_short_name,Miami,2
+logistic_regression,validation,false_positive,circuit_short_name,Montreal,2
+logistic_regression,validation,false_positive,circuit_short_name,Singapore,3
+logistic_regression,validation,false_positive,circuit_short_name,Spielberg,4
+logistic_regression,validation,false_positive,session_year,2024,46
+logistic_regression,validation,false_positive,_position_bin,1-5,3
+logistic_regression,validation,false_positive,_position_bin,6-10,18
+logistic_regression,validation,false_positive,_position_bin,11-15,15
+logistic_regression,validation,false_positive,_position_bin,16-20,10
+logistic_regression,validation,false_positive,_position_bin,21+,0
+logistic_regression,validation,false_negative,team_name,Alpine,4
+logistic_regression,validation,false_negative,team_name,Aston Martin,9
+logistic_regression,validation,false_negative,team_name,Ferrari,14
+logistic_regression,validation,false_negative,team_name,Haas F1 Team,10
+logistic_regression,validation,false_negative,team_name,McLaren,12
+logistic_regression,validation,false_negative,team_name,Mercedes,13
+logistic_regression,validation,false_negative,team_name,RB,9
+logistic_regression,validation,false_negative,team_name,Red Bull Racing,14
+logistic_regression,validation,false_negative,team_name,Williams,3
+logistic_regression,validation,false_negative,circuit_short_name,Austin,9
+logistic_regression,validation,false_negative,circuit_short_name,Baku,1
+logistic_regression,validation,false_negative,circuit_short_name,Catalunya,3
+logistic_regression,validation,false_negative,circuit_short_name,Hungaroring,2
+logistic_regression,validation,false_negative,circuit_short_name,Imola,4
+logistic_regression,validation,false_negative,circuit_short_name,Jeddah,1
+logistic_regression,validation,false_negative,circuit_short_name,Las Vegas,6
+logistic_regression,validation,false_negative,circuit_short_name,Lusail,6
+logistic_regression,validation,false_negative,circuit_short_name,Melbourne,9
+logistic_regression,validation,false_negative,circuit_short_name,Miami,6
+logistic_regression,validation,false_negative,circuit_short_name,Monte Carlo,5
+logistic_regression,validation,false_negative,circuit_short_name,Monza,1
+logistic_regression,validation,false_negative,circuit_short_name,Sakhir,1
+logistic_regression,validation,false_negative,circuit_short_name,Shanghai,8
+logistic_regression,validation,false_negative,circuit_short_name,Silverstone,6
+logistic_regression,validation,false_negative,circuit_short_name,Spa-Francorchamps,8
+logistic_regression,validation,false_negative,circuit_short_name,Suzuka,10
+logistic_regression,validation,false_negative,circuit_short_name,Yas Marina Circuit,1
+logistic_regression,validation,false_negative,circuit_short_name,Zandvoort,1
+logistic_regression,validation,false_negative,session_year,2024,88
+logistic_regression,validation,false_negative,_position_bin,1-5,25
+logistic_regression,validation,false_negative,_position_bin,6-10,39
+logistic_regression,validation,false_negative,_position_bin,11-15,16
+logistic_regression,validation,false_negative,_position_bin,16-20,8
+logistic_regression,validation,false_negative,_position_bin,21+,0
+logistic_regression,test,false_positive,team_name,Alpine,16
+logistic_regression,test,false_positive,team_name,Aston Martin,15
+logistic_regression,test,false_positive,team_name,Ferrari,6
+logistic_regression,test,false_positive,team_name,Haas F1 Team,10
+logistic_regression,test,false_positive,team_name,Kick Sauber,9
+logistic_regression,test,false_positive,team_name,McLaren,4
+logistic_regression,test,false_positive,team_name,Mercedes,6
+logistic_regression,test,false_positive,team_name,Racing Bulls,16
+logistic_regression,test,false_positive,team_name,Red Bull Racing,9
+logistic_regression,test,false_positive,team_name,Williams,9
+logistic_regression,test,false_positive,circuit_short_name,Austin,1
+logistic_regression,test,false_positive,circuit_short_name,Baku,7
+logistic_regression,test,false_positive,circuit_short_name,Catalunya,1
+logistic_regression,test,false_positive,circuit_short_name,Hungaroring,2
+logistic_regression,test,false_positive,circuit_short_name,Imola,3
+logistic_regression,test,false_positive,circuit_short_name,Interlagos,16
+logistic_regression,test,false_positive,circuit_short_name,Las Vegas,4
+logistic_regression,test,false_positive,circuit_short_name,Lusail,2
+logistic_regression,test,false_positive,circuit_short_name,Melbourne,3
+logistic_regression,test,false_positive,circuit_short_name,Mexico City,5
+logistic_regression,test,false_positive,circuit_short_name,Miami,9
+logistic_regression,test,false_positive,circuit_short_name,Montreal,1
+logistic_regression,test,false_positive,circuit_short_name,Sakhir,3
+logistic_regression,test,false_positive,circuit_short_name,Shanghai,3
+logistic_regression,test,false_positive,circuit_short_name,Silverstone,8
+logistic_regression,test,false_positive,circuit_short_name,Singapore,5
+logistic_regression,test,false_positive,circuit_short_name,Spa-Francorchamps,10
+logistic_regression,test,false_positive,circuit_short_name,Spielberg,4
+logistic_regression,test,false_positive,circuit_short_name,Yas Marina Circuit,3
+logistic_regression,test,false_positive,circuit_short_name,Zandvoort,10
+logistic_regression,test,false_positive,session_year,2025,100
+logistic_regression,test,false_positive,_position_bin,1-5,8
+logistic_regression,test,false_positive,_position_bin,6-10,36
+logistic_regression,test,false_positive,_position_bin,11-15,34
+logistic_regression,test,false_positive,_position_bin,16-20,22
+logistic_regression,test,false_positive,_position_bin,21+,0
+logistic_regression,test,false_negative,team_name,Alpine,2
+logistic_regression,test,false_negative,team_name,Aston Martin,5
+logistic_regression,test,false_negative,team_name,Ferrari,7
+logistic_regression,test,false_negative,team_name,Haas F1 Team,8
+logistic_regression,test,false_negative,team_name,Kick Sauber,6
+logistic_regression,test,false_negative,team_name,McLaren,5
+logistic_regression,test,false_negative,team_name,Mercedes,7
+logistic_regression,test,false_negative,team_name,Racing Bulls,7
+logistic_regression,test,false_negative,team_name,Red Bull Racing,4
+logistic_regression,test,false_negative,team_name,Williams,9
+logistic_regression,test,false_negative,circuit_short_name,Austin,5
+logistic_regression,test,false_negative,circuit_short_name,Catalunya,4
+logistic_regression,test,false_negative,circuit_short_name,Imola,1
+logistic_regression,test,false_negative,circuit_short_name,Jeddah,2
+logistic_regression,test,false_negative,circuit_short_name,Las Vegas,2
+logistic_regression,test,false_negative,circuit_short_name,Lusail,4
+logistic_regression,test,false_negative,circuit_short_name,Melbourne,1
+logistic_regression,test,false_negative,circuit_short_name,Miami,3
+logistic_regression,test,false_negative,circuit_short_name,Monte Carlo,6
+logistic_regression,test,false_negative,circuit_short_name,Montreal,4
+logistic_regression,test,false_negative,circuit_short_name,Monza,10
+logistic_regression,test,false_negative,circuit_short_name,Sakhir,2
+logistic_regression,test,false_negative,circuit_short_name,Shanghai,6
+logistic_regression,test,false_negative,circuit_short_name,Spielberg,2
+logistic_regression,test,false_negative,circuit_short_name,Suzuka,5
+logistic_regression,test,false_negative,circuit_short_name,Yas Marina Circuit,3
+logistic_regression,test,false_negative,session_year,2025,60
+logistic_regression,test,false_negative,_position_bin,1-5,11
+logistic_regression,test,false_negative,_position_bin,6-10,21
+logistic_regression,test,false_negative,_position_bin,11-15,13
+logistic_regression,test,false_negative,_position_bin,16-20,15
+logistic_regression,test,false_negative,_position_bin,21+,0
+random_forest,validation,false_positive,team_name,Alpine,6
+random_forest,validation,false_positive,team_name,Aston Martin,7
+random_forest,validation,false_positive,team_name,Ferrari,2
+random_forest,validation,false_positive,team_name,Haas F1 Team,5
+random_forest,validation,false_positive,team_name,Kick Sauber,2
+random_forest,validation,false_positive,team_name,McLaren,2
+random_forest,validation,false_positive,team_name,Mercedes,4
+random_forest,validation,false_positive,team_name,RB,8
+random_forest,validation,false_positive,team_name,Red Bull Racing,2
+random_forest,validation,false_positive,team_name,Williams,3
+random_forest,validation,false_positive,circuit_short_name,Austin,2
+random_forest,validation,false_positive,circuit_short_name,Baku,2
+random_forest,validation,false_positive,circuit_short_name,Catalunya,2
+random_forest,validation,false_positive,circuit_short_name,Hungaroring,1
+random_forest,validation,false_positive,circuit_short_name,Imola,1
+random_forest,validation,false_positive,circuit_short_name,Interlagos,1
+random_forest,validation,false_positive,circuit_short_name,Jeddah,1
+random_forest,validation,false_positive,circuit_short_name,Las Vegas,1
+random_forest,validation,false_positive,circuit_short_name,Lusail,6
+random_forest,validation,false_positive,circuit_short_name,Melbourne,1
+random_forest,validation,false_positive,circuit_short_name,Mexico City,3
+random_forest,validation,false_positive,circuit_short_name,Miami,2
+random_forest,validation,false_positive,circuit_short_name,Sakhir,2
+random_forest,validation,false_positive,circuit_short_name,Shanghai,1
+random_forest,validation,false_positive,circuit_short_name,Silverstone,1
+random_forest,validation,false_positive,circuit_short_name,Singapore,2
+random_forest,validation,false_positive,circuit_short_name,Spa-Francorchamps,2
+random_forest,validation,false_positive,circuit_short_name,Spielberg,5
+random_forest,validation,false_positive,circuit_short_name,Zandvoort,5
+random_forest,validation,false_positive,session_year,2024,41
+random_forest,validation,false_positive,_position_bin,1-5,6
+random_forest,validation,false_positive,_position_bin,6-10,20
+random_forest,validation,false_positive,_position_bin,11-15,15
+random_forest,validation,false_positive,_position_bin,16-20,0
+random_forest,validation,false_positive,_position_bin,21+,0
+random_forest,validation,false_negative,team_name,Alpine,4
+random_forest,validation,false_negative,team_name,Aston Martin,3
+random_forest,validation,false_negative,team_name,Ferrari,4
+random_forest,validation,false_negative,team_name,Haas F1 Team,9
+random_forest,validation,false_negative,team_name,McLaren,4
+random_forest,validation,false_negative,team_name,Mercedes,9
+random_forest,validation,false_negative,team_name,RB,8
+random_forest,validation,false_negative,team_name,Red Bull Racing,7
+random_forest,validation,false_negative,team_name,Williams,3
+random_forest,validation,false_negative,circuit_short_name,Austin,5
+random_forest,validation,false_negative,circuit_short_name,Baku,4
+random_forest,validation,false_negative,circuit_short_name,Hungaroring,1
+random_forest,validation,false_negative,circuit_short_name,Interlagos,4
+random_forest,validation,false_negative,circuit_short_name,Jeddah,2
+random_forest,validation,false_negative,circuit_short_name,Las Vegas,5
+random_forest,validation,false_negative,circuit_short_name,Melbourne,4
+random_forest,validation,false_negative,circuit_short_name,Mexico City,1
+random_forest,validation,false_negative,circuit_short_name,Miami,5
+random_forest,validation,false_negative,circuit_short_name,Montreal,2
+random_forest,validation,false_negative,circuit_short_name,Monza,1
+random_forest,validation,false_negative,circuit_short_name,Shanghai,6
+random_forest,validation,false_negative,circuit_short_name,Silverstone,3
+random_forest,validation,false_negative,circuit_short_name,Singapore,2
+random_forest,validation,false_negative,circuit_short_name,Spa-Francorchamps,2
+random_forest,validation,false_negative,circuit_short_name,Suzuka,2
+random_forest,validation,false_negative,circuit_short_name,Yas Marina Circuit,2
+random_forest,validation,false_negative,session_year,2024,51
+random_forest,validation,false_negative,_position_bin,1-5,0
+random_forest,validation,false_negative,_position_bin,6-10,20
+random_forest,validation,false_negative,_position_bin,11-15,20
+random_forest,validation,false_negative,_position_bin,16-20,11
+random_forest,validation,false_negative,_position_bin,21+,0
+random_forest,test,false_positive,team_name,Alpine,5
+random_forest,test,false_positive,team_name,Aston Martin,6
+random_forest,test,false_positive,team_name,Ferrari,7
+random_forest,test,false_positive,team_name,Haas F1 Team,3
+random_forest,test,false_positive,team_name,Kick Sauber,2
+random_forest,test,false_positive,team_name,McLaren,4
+random_forest,test,false_positive,team_name,Mercedes,4
+random_forest,test,false_positive,team_name,Racing Bulls,13
+random_forest,test,false_positive,team_name,Red Bull Racing,5
+random_forest,test,false_positive,team_name,Williams,6
+random_forest,test,false_positive,circuit_short_name,Catalunya,2
+random_forest,test,false_positive,circuit_short_name,Hungaroring,4
+random_forest,test,false_positive,circuit_short_name,Imola,3
+random_forest,test,false_positive,circuit_short_name,Interlagos,3
+random_forest,test,false_positive,circuit_short_name,Las Vegas,3
+random_forest,test,false_positive,circuit_short_name,Lusail,4
+random_forest,test,false_positive,circuit_short_name,Mexico City,2
+random_forest,test,false_positive,circuit_short_name,Miami,1
+random_forest,test,false_positive,circuit_short_name,Monte Carlo,2
+random_forest,test,false_positive,circuit_short_name,Montreal,3
+random_forest,test,false_positive,circuit_short_name,Monza,4
+random_forest,test,false_positive,circuit_short_name,Sakhir,2
+random_forest,test,false_positive,circuit_short_name,Shanghai,3
+random_forest,test,false_positive,circuit_short_name,Silverstone,2
+random_forest,test,false_positive,circuit_short_name,Singapore,2
+random_forest,test,false_positive,circuit_short_name,Spa-Francorchamps,3
+random_forest,test,false_positive,circuit_short_name,Spielberg,1
+random_forest,test,false_positive,circuit_short_name,Yas Marina Circuit,3
+random_forest,test,false_positive,circuit_short_name,Zandvoort,8
+random_forest,test,false_positive,session_year,2025,55
+random_forest,test,false_positive,_position_bin,1-5,7
+random_forest,test,false_positive,_position_bin,6-10,32
+random_forest,test,false_positive,_position_bin,11-15,16
+random_forest,test,false_positive,_position_bin,16-20,0
+random_forest,test,false_positive,_position_bin,21+,0
+random_forest,test,false_negative,team_name,Alpine,3
+random_forest,test,false_negative,team_name,Aston Martin,8
+random_forest,test,false_negative,team_name,Ferrari,14
+random_forest,test,false_negative,team_name,Haas F1 Team,9
+random_forest,test,false_negative,team_name,Kick Sauber,8
+random_forest,test,false_negative,team_name,McLaren,2
+random_forest,test,false_negative,team_name,Mercedes,6
+random_forest,test,false_negative,team_name,Racing Bulls,2
+random_forest,test,false_negative,team_name,Red Bull Racing,8
+random_forest,test,false_negative,team_name,Williams,7
+random_forest,test,false_negative,circuit_short_name,Austin,10
+random_forest,test,false_negative,circuit_short_name,Baku,1
+random_forest,test,false_negative,circuit_short_name,Catalunya,2
+random_forest,test,false_negative,circuit_short_name,Hungaroring,1
+random_forest,test,false_negative,circuit_short_name,Imola,3
+random_forest,test,false_negative,circuit_short_name,Interlagos,4
+random_forest,test,false_negative,circuit_short_name,Las Vegas,4
+random_forest,test,false_negative,circuit_short_name,Lusail,1
+random_forest,test,false_negative,circuit_short_name,Melbourne,10
+random_forest,test,false_negative,circuit_short_name,Mexico City,1
+random_forest,test,false_negative,circuit_short_name,Miami,7
+random_forest,test,false_negative,circuit_short_name,Monza,1
+random_forest,test,false_negative,circuit_short_name,Sakhir,2
+random_forest,test,false_negative,circuit_short_name,Shanghai,5
+random_forest,test,false_negative,circuit_short_name,Silverstone,3
+random_forest,test,false_negative,circuit_short_name,Singapore,1
+random_forest,test,false_negative,circuit_short_name,Spa-Francorchamps,3
+random_forest,test,false_negative,circuit_short_name,Spielberg,2
+random_forest,test,false_negative,circuit_short_name,Yas Marina Circuit,3
+random_forest,test,false_negative,circuit_short_name,Zandvoort,3
+random_forest,test,false_negative,session_year,2025,67
+random_forest,test,false_negative,_position_bin,1-5,5
+random_forest,test,false_negative,_position_bin,6-10,16
+random_forest,test,false_negative,_position_bin,11-15,22
+random_forest,test,false_negative,_position_bin,16-20,24
+random_forest,test,false_negative,_position_bin,21+,0
+lightgbm,validation,false_positive,team_name,Alpine,5
+lightgbm,validation,false_positive,team_name,Aston Martin,7
+lightgbm,validation,false_positive,team_name,Ferrari,2
+lightgbm,validation,false_positive,team_name,Haas F1 Team,6
+lightgbm,validation,false_positive,team_name,Kick Sauber,4
+lightgbm,validation,false_positive,team_name,McLaren,2
+lightgbm,validation,false_positive,team_name,Mercedes,3
+lightgbm,validation,false_positive,team_name,RB,10
+lightgbm,validation,false_positive,team_name,Red Bull Racing,4
+lightgbm,validation,false_positive,team_name,Williams,5
+lightgbm,validation,false_positive,circuit_short_name,Austin,3
+lightgbm,validation,false_positive,circuit_short_name,Baku,2
+lightgbm,validation,false_positive,circuit_short_name,Catalunya,2
+lightgbm,validation,false_positive,circuit_short_name,Hungaroring,2
+lightgbm,validation,false_positive,circuit_short_name,Imola,1
+lightgbm,validation,false_positive,circuit_short_name,Jeddah,2
+lightgbm,validation,false_positive,circuit_short_name,Lusail,5
+lightgbm,validation,false_positive,circuit_short_name,Melbourne,1
+lightgbm,validation,false_positive,circuit_short_name,Mexico City,6
+lightgbm,validation,false_positive,circuit_short_name,Miami,1
+lightgbm,validation,false_positive,circuit_short_name,Monte Carlo,1
+lightgbm,validation,false_positive,circuit_short_name,Montreal,1
+lightgbm,validation,false_positive,circuit_short_name,Sakhir,2
+lightgbm,validation,false_positive,circuit_short_name,Silverstone,1
+lightgbm,validation,false_positive,circuit_short_name,Singapore,2
+lightgbm,validation,false_positive,circuit_short_name,Spa-Francorchamps,2
+lightgbm,validation,false_positive,circuit_short_name,Spielberg,7
+lightgbm,validation,false_positive,circuit_short_name,Zandvoort,7
+lightgbm,validation,false_positive,session_year,2024,48
+lightgbm,validation,false_positive,_position_bin,1-5,5
+lightgbm,validation,false_positive,_position_bin,6-10,19
+lightgbm,validation,false_positive,_position_bin,11-15,19
+lightgbm,validation,false_positive,_position_bin,16-20,5
+lightgbm,validation,false_positive,_position_bin,21+,0
+lightgbm,validation,false_negative,team_name,Alpine,5
+lightgbm,validation,false_negative,team_name,Aston Martin,8
+lightgbm,validation,false_negative,team_name,Ferrari,9
+lightgbm,validation,false_negative,team_name,Haas F1 Team,9
+lightgbm,validation,false_negative,team_name,Kick Sauber,1
+lightgbm,validation,false_negative,team_name,McLaren,9
+lightgbm,validation,false_negative,team_name,Mercedes,9
+lightgbm,validation,false_negative,team_name,RB,8
+lightgbm,validation,false_negative,team_name,Red Bull Racing,6
+lightgbm,validation,false_negative,team_name,Williams,3
+lightgbm,validation,false_negative,circuit_short_name,Austin,10
+lightgbm,validation,false_negative,circuit_short_name,Baku,4
+lightgbm,validation,false_negative,circuit_short_name,Catalunya,1
+lightgbm,validation,false_negative,circuit_short_name,Interlagos,7
+lightgbm,validation,false_negative,circuit_short_name,Las Vegas,4
+lightgbm,validation,false_negative,circuit_short_name,Lusail,2
+lightgbm,validation,false_negative,circuit_short_name,Melbourne,7
+lightgbm,validation,false_negative,circuit_short_name,Miami,4
+lightgbm,validation,false_negative,circuit_short_name,Montreal,2
+lightgbm,validation,false_negative,circuit_short_name,Monza,2
+lightgbm,validation,false_negative,circuit_short_name,Shanghai,8
+lightgbm,validation,false_negative,circuit_short_name,Silverstone,5
+lightgbm,validation,false_negative,circuit_short_name,Singapore,1
+lightgbm,validation,false_negative,circuit_short_name,Spa-Francorchamps,1
+lightgbm,validation,false_negative,circuit_short_name,Suzuka,7
+lightgbm,validation,false_negative,circuit_short_name,Yas Marina Circuit,2
+lightgbm,validation,false_negative,session_year,2024,67
+lightgbm,validation,false_negative,_position_bin,1-5,11
+lightgbm,validation,false_negative,_position_bin,6-10,31
+lightgbm,validation,false_negative,_position_bin,11-15,17
+lightgbm,validation,false_negative,_position_bin,16-20,8
+lightgbm,validation,false_negative,_position_bin,21+,0
+lightgbm,test,false_positive,team_name,Alpine,7
+lightgbm,test,false_positive,team_name,Aston Martin,8
+lightgbm,test,false_positive,team_name,Ferrari,6
+lightgbm,test,false_positive,team_name,Haas F1 Team,2
+lightgbm,test,false_positive,team_name,Kick Sauber,4
+lightgbm,test,false_positive,team_name,McLaren,4
+lightgbm,test,false_positive,team_name,Mercedes,5
+lightgbm,test,false_positive,team_name,Racing Bulls,14
+lightgbm,test,false_positive,team_name,Red Bull Racing,5
+lightgbm,test,false_positive,team_name,Williams,7
+lightgbm,test,false_positive,circuit_short_name,Baku,1
+lightgbm,test,false_positive,circuit_short_name,Catalunya,3
+lightgbm,test,false_positive,circuit_short_name,Hungaroring,4
+lightgbm,test,false_positive,circuit_short_name,Imola,1
+lightgbm,test,false_positive,circuit_short_name,Interlagos,6
+lightgbm,test,false_positive,circuit_short_name,Jeddah,5
+lightgbm,test,false_positive,circuit_short_name,Las Vegas,1
+lightgbm,test,false_positive,circuit_short_name,Lusail,3
+lightgbm,test,false_positive,circuit_short_name,Melbourne,2
+lightgbm,test,false_positive,circuit_short_name,Mexico City,5
+lightgbm,test,false_positive,circuit_short_name,Miami,1
+lightgbm,test,false_positive,circuit_short_name,Monte Carlo,3
+lightgbm,test,false_positive,circuit_short_name,Montreal,1
+lightgbm,test,false_positive,circuit_short_name,Monza,2
+lightgbm,test,false_positive,circuit_short_name,Sakhir,1
+lightgbm,test,false_positive,circuit_short_name,Shanghai,4
+lightgbm,test,false_positive,circuit_short_name,Singapore,3
+lightgbm,test,false_positive,circuit_short_name,Spa-Francorchamps,2
+lightgbm,test,false_positive,circuit_short_name,Spielberg,1
+lightgbm,test,false_positive,circuit_short_name,Suzuka,2
+lightgbm,test,false_positive,circuit_short_name,Yas Marina Circuit,3
+lightgbm,test,false_positive,circuit_short_name,Zandvoort,8
+lightgbm,test,false_positive,session_year,2025,62
+lightgbm,test,false_positive,_position_bin,1-5,8
+lightgbm,test,false_positive,_position_bin,6-10,24
+lightgbm,test,false_positive,_position_bin,11-15,24
+lightgbm,test,false_positive,_position_bin,16-20,6
+lightgbm,test,false_positive,_position_bin,21+,0
+lightgbm,test,false_negative,team_name,Alpine,4
+lightgbm,test,false_negative,team_name,Aston Martin,10
+lightgbm,test,false_negative,team_name,Ferrari,11
+lightgbm,test,false_negative,team_name,Haas F1 Team,8
+lightgbm,test,false_negative,team_name,Kick Sauber,7
+lightgbm,test,false_negative,team_name,McLaren,3
+lightgbm,test,false_negative,team_name,Mercedes,8
+lightgbm,test,false_negative,team_name,Racing Bulls,4
+lightgbm,test,false_negative,team_name,Red Bull Racing,9
+lightgbm,test,false_negative,team_name,Williams,5
+lightgbm,test,false_negative,circuit_short_name,Austin,12
+lightgbm,test,false_negative,circuit_short_name,Catalunya,2
+lightgbm,test,false_negative,circuit_short_name,Imola,2
+lightgbm,test,false_negative,circuit_short_name,Interlagos,7
+lightgbm,test,false_negative,circuit_short_name,Las Vegas,5
+lightgbm,test,false_negative,circuit_short_name,Lusail,2
+lightgbm,test,false_negative,circuit_short_name,Melbourne,3
+lightgbm,test,false_negative,circuit_short_name,Miami,9
+lightgbm,test,false_negative,circuit_short_name,Monza,1
+lightgbm,test,false_negative,circuit_short_name,Sakhir,3
+lightgbm,test,false_negative,circuit_short_name,Shanghai,4
+lightgbm,test,false_negative,circuit_short_name,Silverstone,7
+lightgbm,test,false_negative,circuit_short_name,Singapore,2
+lightgbm,test,false_negative,circuit_short_name,Spa-Francorchamps,4
+lightgbm,test,false_negative,circuit_short_name,Spielberg,2
+lightgbm,test,false_negative,circuit_short_name,Yas Marina Circuit,3
+lightgbm,test,false_negative,circuit_short_name,Zandvoort,1
+lightgbm,test,false_negative,session_year,2025,69
+lightgbm,test,false_negative,_position_bin,1-5,10
+lightgbm,test,false_negative,_position_bin,6-10,18
+lightgbm,test,false_negative,_position_bin,11-15,20
+lightgbm,test,false_negative,_position_bin,16-20,21
+lightgbm,test,false_negative,_position_bin,21+,0

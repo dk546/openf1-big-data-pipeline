@@ -1,0 +1,5 @@
+report_type,issue_rows,source_file
+duplicate,40,silver_duplicate_report.csv
+outlier,28,silver_outlier_report.csv
+temporal,26,silver_temporal_anomaly_report.csv
+referential_integrity,26,silver_referential_integrity_report.csv

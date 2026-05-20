@@ -1,0 +1,29 @@
+{
+  "generated_at_utc": "2026-05-20T09:55:00+00:00",
+  "output_root": "/content/drive/MyDrive/openf1_big_data_pipeline",
+  "report_tables": {
+    "bronze_endpoint_row_counts": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/tables/bronze_endpoint_row_counts.csv",
+    "data_volume_by_layer": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/tables/data_volume_by_layer.csv",
+    "silver_cleaning_impact_table": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/tables/silver_cleaning_impact_table.csv",
+    "silver_error_taxonomy_table": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/tables/silver_error_taxonomy_table.csv",
+    "gold_target_distribution_table": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/tables/gold_target_distribution_table.csv",
+    "gold_feature_group_summary": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/tables/gold_feature_group_summary.csv",
+    "model_baseline_comparison_table": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/tables/model_baseline_comparison_table.csv",
+    "model_validation_test_metrics_table": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/tables/model_validation_test_metrics_table.csv",
+    "confusion_matrix_table": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/tables/confusion_matrix_table.csv",
+    "error_analysis_summary_table": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/tables/error_analysis_summary_table.csv",
+    "reproducibility_artifacts_table": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/tables/reproducibility_artifacts_table.csv"
+  },
+  "figures_dir": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/figures",
+  "note": "Paths only \u2014 populate row counts from Colab execution artifacts.",
+  "model_run_manifest": "/content/drive/MyDrive/openf1_big_data_pipeline/artifacts/manifests/model_run_manifest.json",
+  "_evidence_bundle_local_mirror": {
+    "rationale": "The original run_manifest.json was written by 05_report_artifacts.ipynb to Google Drive at the path above. This copy in evidence/full_2023_2025/artifacts/manifests/run_manifest.json mirrors that file so the in-repo evidence bundle is self-contained.",
+    "report_tables_local_root": "evidence/full_2023_2025/reports/tables/",
+    "figures_local_root": "evidence/full_2023_2025/reports/figures/",
+    "model_run_manifest_local": "evidence/full_2023_2025/artifacts/manifests/model_run_manifest.json",
+    "report_tables_present_in_bundle": 11,
+    "figures_present_in_bundle": 5,
+    "architecture_diagram_placeholder_present": true
+  }
+}

@@ -1,0 +1,4 @@
+model_name,split,accuracy,precision,recall,f1,roc_auc,positive_rate_true,positive_rate_pred,n_rows
+logistic_regression,validation,0.7763,0.813,0.6944,0.7491,0.8443,0.4808,0.4107,599
+random_forest,validation,0.8464,0.8525,0.8229,0.8375,0.9212,0.4808,0.4641,599
+lightgbm,validation,0.808,0.8216,0.7674,0.7935,0.8887,0.4808,0.4491,599

@@ -1,0 +1,9 @@
+artifact_name,path,exists
+ingestion_manifest,/content/drive/MyDrive/openf1_big_data_pipeline/artifacts/manifests/ingestion_manifest.csv,True
+model_run_manifest,/content/drive/MyDrive/openf1_big_data_pipeline/artifacts/manifests/model_run_manifest.json,True
+run_manifest,/content/drive/MyDrive/openf1_big_data_pipeline/artifacts/manifests/run_manifest.json,False
+feature_dictionary,/content/drive/MyDrive/openf1_big_data_pipeline/artifacts/feature_definitions/feature_dictionary.csv,True
+gold_leakage_guard,/content/drive/MyDrive/openf1_big_data_pipeline/reports/data_quality/gold_leakage_guard_report.csv,True
+baseline_metrics,/content/drive/MyDrive/openf1_big_data_pipeline/reports/model_results/baseline_metrics.csv,True
+validation_metrics,/content/drive/MyDrive/openf1_big_data_pipeline/reports/model_results/validation_metrics.csv,True
+test_metrics,/content/drive/MyDrive/openf1_big_data_pipeline/reports/model_results/test_metrics.csv,True

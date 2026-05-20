@@ -98,7 +98,7 @@ Tier 2 features are **engineered aggregates**, not raw finishing outcomes.
 
 ## G. Placeholder convention for pending full run
 
-When full-run artifacts are missing, use explicit placeholders in tables and prose. The list below has been pruned to reflect the current state — Bronze, Silver, and Gold full-run artifacts are available; only Notebook 04 modeling outputs and a few derived `reports/tables/*.csv` from Notebook 05 remain.
+When full-run artifacts are missing, use explicit placeholders in tables and prose. **All Bronze, Silver, Gold, Notebook 04 (modeling), and Notebook 05 (report consolidation) full-run artifacts are now available on disk under [`evidence/full_2023_2025/`](../../evidence/full_2023_2025/); no `[PENDING]` placeholder should appear in the final report.** The list below is kept for traceability of how each placeholder was resolved.
 
 **Resolved (do NOT use as placeholders any more):**
 
@@ -106,17 +106,19 @@ When full-run artifacts are missing, use explicit placeholders in tables and pro
 - ~~`[PENDING: full-run Gold row count]`~~ — Gold full run completed; 1,756 rows at driver-race grain.
 - ~~`[PENDING: targeted retry results — RUN_TARGETED_RETRY=True]`~~ — Retry executed; reconciliation runs against `ingestion_manifest_effective.csv`.
 - ~~`[PENDING: post-retry target coverage]`~~ — 88 race sessions populated in Silver `session_result` (vs goal 89).
+- ~~`[PENDING: official test metrics — MODELING_MODE=full]`~~ — Notebook 04 full run completed; best model = Random Forest (test F1 = 0.7837, ROC-AUC = 0.8733, accuracy = 0.7963).
+- ~~`[PENDING: Notebook 04 baseline metrics]`~~ — Baseline metrics realised on val and test (heuristic_position F1 = 0.8367 val / 0.7755 test; majority_baseline F1 = 0; random_baseline F1 ≈ 0.467).
+- ~~`[PENDING: confusion matrix and per-segment error analysis]`~~ — `confusion_matrix.csv` (48 rows) and `error_analysis.csv` (807 rows) written by Notebook 04; per-group consolidation (Tables 12–13) is the Notebook 05 task only.
+- ~~`[PENDING: feature importance top-20]`~~ — `feature_importance.csv` (120 rows = 3 models × 40 features) written; top-20 rendering is a Notebook 05 task only.
+- ~~`[PENDING: reproducibility artifacts table]`~~ — Notebook 05 wrote `evidence/full_2023_2025/reports/tables/reproducibility_artifacts_table.csv` (8 rows). When citing, note that the table is a mid-run snapshot built before the `run_manifest.json` writer cell — `run_manifest` legitimately exists on disk but appears as `exists=False` in this snapshot.
+- ~~`[PENDING: Notebook 05 derived report tables under reports/tables/]`~~ — Notebook 05 wrote 11 tables under `evidence/full_2023_2025/reports/tables/`: `bronze_endpoint_row_counts.csv`, `data_volume_by_layer.csv`, `silver_cleaning_impact_table.csv`, `silver_error_taxonomy_table.csv`, `gold_target_distribution_table.csv`, `gold_feature_group_summary.csv`, `model_baseline_comparison_table.csv`, `model_validation_test_metrics_table.csv`, `confusion_matrix_table.csv`, `error_analysis_summary_table.csv`, `reproducibility_artifacts_table.csv`.
+- ~~`[PENDING: Notebook 05 derived figures under reports/figures/]`~~ — Notebook 05 wrote 5 matplotlib PNGs under `evidence/full_2023_2025/reports/figures/`: `target_distribution.png`, `missingness_before_after.png`, `model_metric_comparison.png`, `confusion_matrix.png`, `feature_importance_top20.png`. The Medallion architecture diagram remains a `architecture_diagram_placeholder.md` placeholder; replace with a rendered PNG before the final PDF if a diagram is desired.
 
 **Still active:**
 
-- `[PENDING: official test metrics — MODELING_MODE=full]` (Notebook 04)
-- `[PENDING: Notebook 04 baseline metrics]`
-- `[PENDING: confusion matrix and per-segment error analysis]` (Notebook 04 + 05)
-- `[PENDING: reproducibility artifacts table]` (Notebook 05)
-- `[PENDING: feature importance top-20]` (Notebook 04 + 05)
-- `[PENDING: Notebook 05 derived report tables under reports/tables/]`
+- *(none — full-run pipeline + modeling + report consolidation are all on disk).*
 
-Do not interpolate or estimate final metrics from smoke runs.
+Do not interpolate or estimate final metrics from smoke runs. The numbers above are the locked full-run figures and must be cited verbatim.
 
 ---
 
@@ -178,3 +180,68 @@ When citing reconciliation totals in the report:
 - If reconciliation was run **after** retry, cite the manifest as `ingestion_manifest_effective.csv` and label totals as "post-retry (effective)".
 
 Never compare pre-retry reconciliation totals directly to post-retry totals without naming which manifest each was computed against.
+
+---
+
+## I. Modeling design — baselines, models, validation usage
+
+Use the wording below verbatim in Chapter 6, slides, and the viva when explaining why Notebook 04 ships three baselines, three supervised models, and no hyperparameter tuning. These statements are the locked source of truth for §6.1–6.4.
+
+### I.1 Baselines: three is the locked set
+
+> Three baselines anchor the model performance table — a statistical floor (random), a trivial-learner floor (majority-class), and a domain-informed reference (heuristic position). None is intended to be competitive; they exist to establish the bar the supervised models must clear.
+
+Always describe the heuristic as **intentionally strong and domain-informed**, never as a strawman:
+
+> The heuristic baseline predicts `points_finish = 1` iff `first_observed_position ≤ 10`. It encodes the dominant F1 domain intuition that drivers running inside the top 10 in the opening laps usually finish in the points. `first_observed_position` is also one of the 40 model features, so the heuristic is deliberately the bar the ML models must clear — it directly tests whether 40 Gold features and a learned decision boundary add value over a single early-race position signal.
+
+Per §H.4, the heuristic uses `first_observed_position` (Tier 1 early-session feature) — not grid position — because `starting_grid` is an optional OpenF1 endpoint and is absent in this run.
+
+Baselines are computed in `src/openf1_pipeline/modeling/baselines.py`, saved separately to `reports/model_results/baseline_metrics.csv`, and never participate in any fitting step. Do not add a fourth baseline; a stratified-random baseline is statistically equivalent to the existing random baseline at the train prevalence.
+
+### I.2 Model set: three is the locked set
+
+> The supervised model set is locked at three: Logistic Regression (linear), Random Forest (nonlinear bagged trees), and LightGBM (boosted trees). The three together cover the canonical model families for tabular classification at a deliberate minimum-complete level.
+
+Use one-line slots when describing each:
+
+- **Logistic Regression** — interpretable linear benchmark; exposes signed coefficients.
+- **Random Forest** — robust nonlinear ensemble that captures feature interactions without tuning; exposes Gini importances.
+- **LightGBM** — strong gradient-boosted tree learner for small-to-medium tabular data; exposes split-gain importances and handles missingness natively.
+
+### I.3 Why no extra model zoo
+
+> This is a Big Data Infrastructure project, not an ML benchmarking project. The goal of Chapter 6 is to demonstrate that the Gold feature mart is leakage-free and consumable by varied modeling approaches — not to maximise benchmark performance through extensive model search.
+
+Always justify the locked three with these explicit exclusions:
+
+- **XGBoost / CatBoost** — statistically redundant with LightGBM at this row count; would inflate the table without changing conclusions.
+- **SVM / KNN** — would shift the chapter toward kernel- and distance-metric tuning and away from the pipeline architecture.
+- **Neural networks** — out of scope: the 558-row 2023 training split is far too small to justify them without overfitting concerns dominating the narrative.
+
+Do not introduce additional models in Chapter 6, slides, or the viva. A tier-1-only sensitivity check is the only sanctioned modeling-side extension (see §7.3) and even that is optional.
+
+### I.4 Validation usage — reference, not tuning
+
+> The 2024 validation split is used as an out-of-sample validation reference between training and the protected 2025 test set. It is reported alongside the test metrics so the reader can see the train → validation → test trajectory, but no decision (model choice, hyperparameter value, threshold) is made on it.
+
+Do not write "hyperparameter tuning", "model selection on validation", or "validation-driven sweep" anywhere in the report. Each model is fit once on the 2023 split with the defaults declared in `src/openf1_pipeline/modeling/train.py`. A hyperparameter study is explicitly listed as out of scope in §7.3.
+
+The 2025 test split is **protected**: it is consumed only inside the final metrics loop and never touches any fitting or selection step.
+
+### I.5 `class_weight="balanced"` is a defensive default, not rebalancing
+
+> All three supervised pipelines pass `class_weight="balanced"` to the underlying classifier. Because the Gold target is already close to 50 / 50 (≈47.5 / 52.5), this is a defensive modeling default to keep the three model configurations symmetric — not a major rebalancing intervention. Its effect on metrics is small relative to model-family differences.
+
+Do not describe `class_weight="balanced"` as "handling class imbalance" or "rebalancing the dataset". Frame it as a symmetric configuration choice across the three models. The Gold target is balanced enough that accuracy alongside ROC-AUC is the correct reporting choice without explicit resampling.
+
+### I.6 Metrics: what is computed, what is intentionally omitted
+
+> Computed metrics (locked): accuracy, precision, recall, F1, ROC-AUC, confusion matrix, per-group error analysis (team / circuit / season / position bin), and per-model feature importance.
+
+Two metrics are **intentionally omitted** and must not be cited as if available:
+
+- **PR-AUC** is not implemented in `src/openf1_pipeline/modeling/evaluate.py` and is redundant with ROC-AUC at this near-balanced prior. Do not write "PR-AUC" in the report unless `average_precision_score` is added to `compute_classification_metrics` first.
+- **Balanced accuracy** is omitted because the target prior is already ~47.5 / 52.5; balanced accuracy and accuracy would be effectively identical and would only add table clutter.
+
+Feature importance (LR coefficients, RF Gini, LightGBM split gain) is the interpretation channel for §6.5; we do not run SHAP or permutation importance studies in this project.

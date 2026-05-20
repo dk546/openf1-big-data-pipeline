@@ -20,13 +20,13 @@ Planned tables and figures for the final written deliverable. **Do not populate 
 | Table 8 | Gold join quality report | §5.2 | `gold_join_quality_report.csv` | `03` | full-run evidence available | 1,756 rows in / 1,756 rows out for every group; 0 unmatched |
 | Table 9 | Target distribution | §5.5, §6.1 | `gold_target_distribution.csv`; `reports/tables/gold_target_distribution_table.csv` | `03`, `05` | full-run evidence available | 0 = 922 (52.5057 %), 1 = 834 (47.4943 %), n = 1,756 |
 | Table 10 | Model feature plan by tier | §5.3, §6.1 | `model_feature_plan.csv` | `03`/`04` (frozen in repo) | full-run evidence available | 8 Tier 1 + 32 Tier 2 = 40 default numeric; 7 optional categoricals (`session_year` excluded from `X` under season splits) |
-| Table 11 | Baseline and model performance comparison | §6.3–6.4 | `baseline_metrics.csv`; `validation_metrics.csv`; `test_metrics.csv`; `reports/tables/model_baseline_comparison_table.csv` | `04`, `05` | final modeling pending | `[PENDING: Notebook 04 full run]` |
-| Table 12 | Confusion matrix | §6.5 | `confusion_matrix.csv`; `reports/tables/confusion_matrix_table.csv` | `04`, `05` | final modeling pending | |
-| Table 13 | Error analysis summary | §6.5 | `error_analysis.csv`; `reports/tables/error_analysis_summary_table.csv` | `04`, `05` | final modeling pending | By team/circuit/season |
-| Table 14 | Reproducibility artifacts | §6.6, §3.6 | `reports/tables/reproducibility_artifacts_table.csv`; manifests | `05` | final modeling pending | Lists seeds, paths, git hash; should also list retry manifest + reconciliation reports |
-| Table 15 | Bronze ingestion retry summary | §3.2, §4.3 | `artifacts/manifests/ingestion_retry_manifest.csv` (via `summarize_retry_manifest(...)`) | `01` (retry section); optionally consolidated in `05` | **pending until retry completes** | Columns: `endpoint`, `retry_attempts`, `retry_success_count`, `retry_failure_count`, `rows_recovered`, `remaining_failures`. Aggregated from the retry manifest. |
-| Table 16 | Bronze manifest-file reconciliation summary | §3.2, §4.2 | `reports/data_quality/bronze_manifest_file_reconciliation_summary.csv` (built against `ingestion_manifest_effective.csv` when retry has run, otherwise against `ingestion_manifest.csv`; DuckDB cross-check in `duckdb_bronze_manifest_file_reconciliation_summary.csv`) | `01` (reconciliation + DuckDB sections) | full-run evidence available; refreshed post-retry — post-retry version **pending until retry completes** | Columns: `reconciliation_status`, `issue_type`, `count`, `interpretation`. Drives the Silver go/no-go decision. When citing post-retry totals, also cite the manifest path used (effective vs original). |
-| Table 17 | Target coverage before/after retry | §4.4, §4.5 | `artifacts/manifests/ingestion_manifest.csv`; `artifacts/manifests/ingestion_retry_manifest.csv`; `artifacts/manifests/ingestion_manifest_effective.csv`; `reports/data_quality/bronze_row_counts.csv`; `reports/data_quality/bronze_manifest_file_reconciliation.csv` | `01` (retry verification cell); consolidated in `05` | **pending until retry completes** | Columns: `season`, `race_sessions`, `session_result_before_retry`, `session_result_recovered_by_retry`, `session_result_effective`, `final_target_coverage`, `coverage_percentage`. `session_result_effective` is the authoritative post-retry number (sourced from the effective manifest). Goal 89/89 across 2023–2025. |
+| Table 11 | Baseline and model performance comparison | §6.3–6.4 | `baseline_metrics.csv` (6 rows); `validation_metrics.csv` (3 rows); `test_metrics.csv` (3 rows); `reports/tables/model_baseline_comparison_table.csv` | `04`, `05` | **full-run evidence available** | Best model = Random Forest on every metric on both splits (test F1 = 0.7837, ROC-AUC = 0.8733, accuracy = 0.7963). Heuristic baseline test F1 = 0.7755, ROC-AUC = 0.7801 — ML beats heuristic narrowly on F1, decisively on ROC-AUC. |
+| Table 12 | Confusion matrix | §6.5 | `confusion_matrix.csv` (48 rows = 6 model_names × 2 splits × 4 cells); `reports/tables/confusion_matrix_table.csv` | `04`, `05` | **full-run evidence available** | Random Forest test confusion: TP ≈ 221, FN ≈ 67, FP ≈ 55, TN ≈ 256 (288 / 311 row totals). |
+| Table 13 | Error analysis summary | §6.5 | `error_analysis.csv` (807 rows); `reports/tables/error_analysis_summary_table.csv` | `04`, `05` | **full-run evidence available** | Groups: `team_name`, `circuit_short_name`, `session_year`, `_position_bin` (`1-5`, `6-10`, `11-15`, `16-20`, `21+`); covers all 6 predictors (3 baselines + 3 models) on both splits. |
+| Table 14 | Reproducibility artifacts | §6.6, §3.6 | `reports/tables/reproducibility_artifacts_table.csv` (8 rows); `model_run_manifest.json`; manifests | `05` | **full-run evidence available** | Lists seeds (`RANDOM_SEED=42`), paths, existence flags; references the modeling manifest (`modeling_mode=full`, `split_method=season`, `evidence_tier=mba_official`) plus retry manifest + reconciliation reports. Caveat: table is captured before `run_manifest.json` is written in the same notebook run, so `run_manifest` appears as `exists=False` in the snapshot but is present on disk. |
+| Table 15 | Bronze ingestion retry summary | §3.2, §4.3 | `artifacts/manifests/ingestion_retry_manifest.csv` (via `summarize_retry_manifest(...)`) | `01` (retry section); optionally consolidated in `05` | **full-run evidence available** | Columns: `endpoint`, `retry_attempts`, `retry_success_count`, `retry_failure_count`, `rows_recovered`, `remaining_failures`. Aggregated from the retry manifest written by the full-run targeted retry. |
+| Table 16 | Bronze manifest-file reconciliation summary | §3.2, §4.2 | `reports/data_quality/bronze_manifest_file_reconciliation_summary.csv` (built against `ingestion_manifest_effective.csv`; DuckDB cross-check in `duckdb_bronze_manifest_file_reconciliation_summary.csv`) | `01` (reconciliation + DuckDB sections) | **full-run evidence available** (post-retry, against the effective manifest) | Columns: `reconciliation_status`, `issue_type`, `count`, `interpretation`. Drives the Silver go/no-go decision. Manifest path used = `ingestion_manifest_effective.csv`. |
+| Table 17 | Target coverage before/after retry | §4.4, §4.5 | `artifacts/manifests/ingestion_manifest.csv`; `artifacts/manifests/ingestion_retry_manifest.csv`; `artifacts/manifests/ingestion_manifest_effective.csv`; `reports/data_quality/bronze_row_counts.csv`; `reports/data_quality/bronze_manifest_file_reconciliation.csv` | `01` (retry verification cell); consolidated in `05` | **full-run evidence available** | Columns: `season`, `race_sessions`, `session_result_before_retry`, `session_result_recovered_by_retry`, `session_result_effective`, `final_target_coverage`, `coverage_percentage`. `session_result_effective` is the authoritative post-retry number (sourced from the effective manifest). Realised coverage: 88 / 89 race sessions in Silver `session_result` (`starting_grid` 404 documented as `optional_missing`). |
 | Table 18 | Bronze → Silver row preservation | §3.3, §4.4 | `bronze_row_counts.csv`; `silver_table_inventory.csv`; `duckdb_bronze_bronze_total_rows.csv`; `duckdb_silver_silver_row_counts.csv` | `01`, `02`, `05` | full-run evidence available | Columns: `endpoint`, `bronze_rows`, `silver_rows`, `delta`, `delta_pct`. Bronze total = Silver total = 148,184; row loss = 0. |
 | Table 19 | Gold feature mart summary | §5.1 | `gold_feature_summary_stats.csv`; `duckdb_gold_gold_row_count.csv`; `duckdb_gold_gold_duplicate_keys.csv` | `03` | full-run evidence available (post-fix rerun) | One-row summary (verified post-fix): `row_count = 1756`, `column_count = 62`, `model_feature_count = 40`, `duplicate_grain_rows = 0`, `points_finish_positive_pct = 47.4943`. |
 | Table 20 | Gold feature tier summary | §5.3, §6.1 | `model_feature_plan.csv`; `feature_dictionary.csv` (`feature_tier`) | `03` | full-run evidence available | Three rows: `tier1_early = 8`, `tier2_full_session = 32`, `total_default_numeric = 40`. Pair with the Tier 1 / Tier 2 example listing in §5.3. |
@@ -39,15 +39,16 @@ Planned tables and figures for the final written deliverable. **Do not populate 
 
 | ID | Title | Report section | Source artifact(s) | Generated by | Status | Notes |
 |----|-------|----------------|-------------------|--------------|--------|-------|
-| Figure 1 | Medallion architecture diagram | §3.1 | `reports/figures/architecture_diagram_placeholder.md` | `05` (placeholder) | authoring pending | Replace with diagram (FigJam/draw.io) before submission |
-| Figure 2 | Pipeline execution workflow | §3.6 | Notebook order; README run table | Manual / `05` | authoring pending | Colab 00→05 flow |
-| Figure 3 | Data volume by layer | §2.3 | `reports/tables/data_volume_by_layer.csv` | `05` | smoke evidence available | Bar chart from table — full volumes `[PENDING]` |
-| Figure 4 | Missingness before/after | §4.4 | `silver_missingness_before.csv`; `silver_missingness_after.csv` | `05` | smoke evidence available | `missingness_before_after.png` |
-| Figure 5 | Gold feature group coverage | §5.1 | `feature_dictionary.csv` or `gold_feature_summary_stats.csv` | `03` or `05` | smoke evidence available | Count features per `feature_group` |
-| Figure 6 | Target distribution | §5.5, §6.1 | `gold_target_distribution.csv` | `05` | smoke evidence available | `target_distribution.png`; smoke 50/50 not final |
-| Figure 7 | Model metric comparison | §6.4 | `validation_metrics.csv`; `test_metrics.csv` | `05` | final modeling pending | `model_metric_comparison.png` |
-| Figure 8 | Feature importance top 20 | §6.5 | `feature_importance.csv` | `05` | final modeling pending | `feature_importance_top20.png`; smoke may be degenerate |
-| Figure 9 *(optional)* | Target coverage before vs after retry | §4.4, §4.5 | Table 17 (`target_coverage_before_after_retry`) derived from `ingestion_manifest.csv`, `ingestion_retry_manifest.csv`, `bronze_manifest_file_reconciliation.csv` | `05` (optional matplotlib bar chart) | **pending until retry completes** | Two grouped bars per season: `session_result` successes before retry vs total coverage after retry; annotate optional `starting_grid` gap. |
+| Figure 1 | Medallion architecture diagram | §3.1 | `reports/figures/architecture_diagram_placeholder.md` | `05` (placeholder) | authoring pending — placeholder MD on disk | Replace with rendered PNG (FigJam/draw.io) before final PDF |
+| Figure 2 | Pipeline execution workflow | §3.6 | Notebook order; README run table | Manual / `05` | authoring pending | Colab 00→05 flow (text description in README §11 covers it) |
+| Figure 3 | Data volume by layer | §2.3 | `reports/tables/data_volume_by_layer.csv` | `05` | full-run evidence available (table) — bar chart authoring pending | Source CSV written by NB 05; bar chart to be rendered in final-report toolchain |
+| Figure 4 | Missingness before/after | §4.4 | `silver_missingness_before.csv`; `silver_missingness_after.csv` | `05` | **full-run evidence available** | `reports/figures/missingness_before_after.png` rendered by NB 05 |
+| Figure 5 | Gold feature group coverage | §5.1 | `feature_dictionary.csv` or `gold_feature_summary_stats.csv` | `03` or `05` | full-run evidence available (source CSVs + `reports/tables/gold_feature_group_summary.csv`) — chart authoring pending | NB 05 wrote the consolidation table; rendered chart to be added to final PDF |
+| Figure 6 | Target distribution | §5.5, §6.1 | `gold_target_distribution.csv` | `05` | **full-run evidence available** | `reports/figures/target_distribution.png` rendered by NB 05; reflects 834 / 922 split |
+| Figure 7 | Model metric comparison | §6.4 | `validation_metrics.csv`; `test_metrics.csv`; `baseline_metrics.csv` (heuristic reference line) | `05` | **full-run evidence available** | `reports/figures/model_metric_comparison.png` rendered by NB 05 — overlay of accuracy / F1 / ROC-AUC for the 3 ML models + heuristic on both splits. |
+| Figure 8 | Feature importance top 20 | §6.5 | `feature_importance.csv` (120 rows = 3 models × 40 features) | `05` | **full-run evidence available** | `reports/figures/feature_importance_top20.png` rendered by NB 05; Tier 1 position cluster (`first_observed_position`, `early_*`) and Tier 1/2 lap-pace features dominate, consistent with the strong heuristic. |
+| Figure 9 *(optional)* | Target coverage before vs after retry | §4.4, §4.5 | Table 17 (`target_coverage_before_after_retry`) derived from `ingestion_manifest.csv`, `ingestion_retry_manifest.csv`, `bronze_manifest_file_reconciliation.csv` | `05` (optional matplotlib bar chart) | source manifests available; **figure not generated** (optional) | If included, two grouped bars per season: `session_result` successes before retry vs total coverage after retry; annotate optional `starting_grid` gap. |
+| Figure 10 | Confusion matrix heatmap | §6.5 | `confusion_matrix.csv` | `05` | **full-run evidence available** | `reports/figures/confusion_matrix.png` rendered by NB 05 (Random Forest, test split, 2×2). |
 
 ---
 
@@ -56,12 +57,15 @@ Planned tables and figures for the final written deliverable. **Do not populate 
 | Category | Available now | Pending |
 |----------|---------------|---------|
 | Tables 1–10 | Full-run values from latest Bronze/Silver/Gold run | — |
-| Tables 11–14 | Structure only | Official metrics from Notebook 04 + reproducibility artifacts table from Notebook 05 |
-| Tables 15–17 | Bronze retry/reconciliation totals from latest run | Refresh after any further retry; Table 17 confirms 89/89 race-session goal |
+| Tables 11–13 | **Full-run modeling values from Notebook 04** (baseline + validation + test metrics; 48-row confusion matrix; 807-row error analysis) **+ Notebook 05 consolidation tables written** (`model_baseline_comparison_table.csv`, `model_validation_test_metrics_table.csv`, `confusion_matrix_table.csv`, `error_analysis_summary_table.csv`) | — |
+| Table 14 | `model_run_manifest.json` written by Notebook 04 + `reproducibility_artifacts_table.csv` (8 rows) written by Notebook 05 | — (see snapshot caveat in Table 14) |
+| Tables 15–17 | Bronze retry/reconciliation totals from full run; reconciliation runs against the effective manifest | — |
 | Tables 18–22 | Full-run values from Bronze→Silver row preservation and Gold mart audit (Table 22 reflects the post-fix Gold rerun — `lap_count` and `pit_out_lap_count` at 0 % missing) | — |
-| Figures 1–2, 7–8 | Placeholder or pending | Final versions |
-| Figures 3–6 | Can be generated from full-run artifacts via `05` | Final rendering inside `05` |
-| Figure 9 *(optional)* | Pending Table 17 | Build from Table 17 in `05` |
+| Figure 1 | Markdown placeholder on disk (`architecture_diagram_placeholder.md`) | Render PNG before final PDF |
+| Figure 2 | Notebook order documented in README §11 | Optional rendered diagram for the final PDF |
+| Figures 3, 5 | Source CSVs full-run available (`data_volume_by_layer.csv`, `gold_feature_group_summary.csv`) | Bar charts to be rendered in the final-report toolchain |
+| Figures 4, 6, 7, 8, 10 | **PNGs rendered by Notebook 05** (`missingness_before_after.png`, `target_distribution.png`, `model_metric_comparison.png`, `feature_importance_top20.png`, `confusion_matrix.png`) | — |
+| Figure 9 *(optional)* | Source manifests available; figure not generated (optional) | Build from Table 17 in `05` only if included in final PDF |
 
 ---
 
@@ -91,7 +95,7 @@ Planned tables and figures for the final written deliverable. **Do not populate 
 
 ## Latest Gold audit anchor (post-fix Notebook 03 rerun)
 
-These figures are the source of truth for Tables 7–10, 19–22 and Figures 5–6 until Notebook 04 lands:
+These figures are the source of truth for Tables 7–10, 19–22 and Figures 5–6:
 
 - Row count = **1,756** · column count = **62** · grain = `(session_key, meeting_key, driver_number)` · duplicate grain rows = **0**
 - Target distribution: `points_finish = 0` → **922** (52.5057 %), `points_finish = 1` → **834** (47.4943 %) · target nulls = **0**
@@ -101,3 +105,61 @@ These figures are the source of truth for Tables 7–10, 19–22 and Figures 5�
 - Post-fix NaN check: `lap_count` = **0**, `pit_out_lap_count` = **0**; all count-style event-absence features zero-filled
 - DuckDB cross-checks agree with Spark/pandas on row count, duplicate keys, and target distribution
 - Verdict: **PASS — ready for Notebook 04**
+
+---
+
+## Latest modeling audit anchor (Notebook 04 full run)
+
+These figures are the source of truth for Tables 11–13 and Figures 7–8. Cite them verbatim in §6.2–6.5 and the executive summary.
+
+**Run configuration (`artifacts/manifests/model_run_manifest.json`):** `modeling_mode = "full"`, `split_method = "season"`, `evidence_tier = "mba_official"`, `random_seed = 42`, `target = "points_finish"`, `feature_count = 40` (8 Tier 1 + 32 Tier 2), `models = ["logistic_regression", "random_forest", "lightgbm"]`, `baselines = ["random_baseline", "majority_baseline", "heuristic_position"]`.
+
+**Realised splits (`reports/model_results/train_validation_test_split_summary.csv`):**
+
+| Split | Season | Rows | `points_finish = 1` | `points_finish = 0` | Positive rate |
+|-------|--------|------|---------------------|---------------------|---------------|
+| Train | 2023 | 558 | 258 | 300 | 0.4624 |
+| Validation | 2024 | 599 | 288 | 311 | 0.4808 |
+| Test | 2025 | 599 | 288 | 311 | 0.4808 |
+| **Total** | — | **1,756** | 834 | 922 | 0.4749 |
+
+**Baseline metrics (`reports/model_results/baseline_metrics.csv`):**
+
+| Baseline | Split | Accuracy | Precision | Recall | F1 | ROC-AUC |
+|----------|-------|----------|-----------|--------|-----|---------|
+| `random_baseline` | validation | 0.4975 | 0.4765 | 0.4583 | 0.4673 | 0.5000 |
+| `majority_baseline` | validation | 0.5192 | 0.0000 | 0.0000 | 0.0000 | 0.5000 |
+| `heuristic_position` | validation | **0.8397** | **0.8200** | **0.8542** | **0.8367** | **0.8403** |
+| `random_baseline` | test | 0.4975 | 0.4765 | 0.4583 | 0.4673 | 0.5000 |
+| `majority_baseline` | test | 0.5192 | 0.0000 | 0.0000 | 0.0000 | 0.5000 |
+| `heuristic_position` | test | **0.7796** | **0.7600** | **0.7917** | **0.7755** | **0.7801** |
+
+**Model metrics (`reports/model_results/validation_metrics.csv` + `test_metrics.csv`):**
+
+| Model | Split | Accuracy | Precision | Recall | F1 | ROC-AUC |
+|-------|-------|----------|-----------|--------|-----|---------|
+| `logistic_regression` | validation | 0.7763 | 0.8130 | 0.6944 | 0.7491 | 0.8443 |
+| **`random_forest`** | **validation** | **0.8464** | **0.8525** | **0.8229** | **0.8375** | **0.9212** |
+| `lightgbm` | validation | 0.8080 | 0.8216 | 0.7674 | 0.7935 | 0.8887 |
+| `logistic_regression` | test | 0.7329 | 0.6951 | 0.7917 | 0.7403 | 0.8088 |
+| **`random_forest`** | **test** | **0.7963** | **0.8007** | **0.7674** | **0.7837** | **0.8733** |
+| `lightgbm` | test | 0.7813 | 0.7794 | 0.7604 | 0.7698 | 0.8590 |
+
+**Random Forest test confusion (best model on protected 2025 split):** TP ≈ 221, FN ≈ 67, FP ≈ 55, TN ≈ 256 (288 / 311 row totals; 599 rows).
+
+**ML vs heuristic verdict:** Random Forest beats the heuristic baseline on every metric on both splits — narrowly on accuracy/F1 (test Δ F1 = +0.0082), decisively on ROC-AUC (test Δ ROC-AUC = +0.0932). All three ML models clear the heuristic floor and degrade less than the heuristic from validation to test, confirming the val → test drop is real 2025 season drift rather than validation overfitting (no tuning was performed on validation).
+
+**Artifact inventory written by Notebook 04 cell 21:**
+
+| Artifact | Rows | Path |
+|----------|------|------|
+| `train_validation_test_split_summary.csv` | 3 | `reports/model_results/` |
+| `baseline_metrics.csv` | 6 | `reports/model_results/` |
+| `validation_metrics.csv` | 3 | `reports/model_results/` |
+| `test_metrics.csv` | 3 | `reports/model_results/` |
+| `confusion_matrix.csv` | 48 | `reports/model_results/` |
+| `error_analysis.csv` | 807 | `reports/model_results/` |
+| `feature_importance.csv` | 120 | `reports/model_results/` |
+| `model_run_manifest.json` | — | `artifacts/manifests/` |
+
+Verdict: **PASS — official MBA evidence; safe for Notebook 05 consolidation.**

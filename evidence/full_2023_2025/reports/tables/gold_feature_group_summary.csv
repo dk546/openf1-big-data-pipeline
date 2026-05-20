@@ -1,0 +1,10 @@
+feature_group,feature_count,allowed_for_modeling_count,avg_missing_pct
+diagnostic_outcome,6,0,1.67995
+identifiers,3,0,0.0
+laps,15,15,2.1867666666666667
+metadata,12,0,2.8426333333333336
+pit,6,6,17.1982
+position,5,5,0.0
+race_control,7,7,0.0
+target,1,0,0.0
+weather,7,7,0.0

@@ -1,0 +1,33 @@
+{
+  "generated_at_utc": "2026-05-20T09:49:11+00:00",
+  "artifact_paths": {
+    "baseline_metrics": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/model_results/baseline_metrics.csv",
+    "validation_metrics": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/model_results/validation_metrics.csv",
+    "test_metrics": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/model_results/test_metrics.csv",
+    "confusion_matrix": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/model_results/confusion_matrix.csv",
+    "error_analysis": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/model_results/error_analysis.csv",
+    "feature_importance": "/content/drive/MyDrive/openf1_big_data_pipeline/reports/model_results/feature_importance.csv",
+    "model_run_manifest": "/content/drive/MyDrive/openf1_big_data_pipeline/artifacts/manifests/model_run_manifest.json"
+  },
+  "modeling_mode": "full",
+  "split_method": "season",
+  "evidence_tier": "mba_official",
+  "random_seed": 42,
+  "target": "points_finish",
+  "feature_count": 40,
+  "feature_tier_counts": {
+    "tier1_early": 8,
+    "tier2_full_session": 32,
+    "total_default_numeric": 40
+  },
+  "models": [
+    "logistic_regression",
+    "random_forest",
+    "lightgbm"
+  ],
+  "baselines": [
+    "random_baseline",
+    "majority_baseline",
+    "heuristic_position"
+  ]
+}

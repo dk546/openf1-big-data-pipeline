@@ -374,13 +374,13 @@ On Colab with Drive: outputs live under `/content/drive/MyDrive/openf1_big_data_
 |-------|--------|
 | Project docs (`project_context`, `project_plan`, checklist) | Done |
 | Repository scaffold (folders, placeholders, README) | Done |
-| Bronze ingestion | Code complete — Colab evidence in `evidence/smoke_2024_maxsessions2/` |
-| Silver cleaning & DQ reports | Code complete — Colab smoke passed |
-| Gold feature mart | Code complete — run `03` in Colab for artifacts |
-| Modeling & evaluation | Code complete — run `04` in Colab (`MODELING_MODE=smoke` then `full`) |
-| Report artifacts & final manifest | Code complete — run `05` in Colab after modeling |
+| Bronze ingestion | **Done** — full 2023–2025 run + targeted retry; effective-manifest reconciliation passed (`evidence/full_2023_2025/`); 148,184 rows across required endpoints |
+| Silver cleaning & DQ reports | **Done** — full run; 148,184 rows preserved with 0 row loss; 0 rejected records; 0 referential-integrity unmatched |
+| Gold feature mart | **Done** — full run; 1,756 driver-race rows × 62 cols; 40 default numeric model features (8 Tier 1 + 32 Tier 2); leakage guard and feature dictionary committed |
+| Modeling & evaluation | **Done** — `MODELING_MODE="full"`, season splits 2023/2024/2025 (558/599/599); best model = Random Forest (test F1 = 0.7837, ROC-AUC = 0.8733, accuracy = 0.7963); `model_run_manifest.json` written |
+| Report artifacts & final manifest | **Done** — Notebook 05 wrote 11 report tables (`reports/tables/`) and 5 figures (`reports/figures/`); `artifacts/manifests/run_manifest.json` written; full evidence consolidated under `evidence/full_2023_2025/` |
 
-Track progress in `implementation_checklist.md`.
+Final-run evidence: see [`evidence/full_2023_2025/`](evidence/full_2023_2025/). Track progress in `implementation_checklist.md`.
 
 ---
 
@@ -394,4 +394,4 @@ The final written deliverable structure is **locked** in [`reports/report_draft/
 | [`table_figure_register.md`](reports/report_draft/table_figure_register.md) | Planned Tables 1–14 and Figures 1–8 with source artifacts |
 | [`narrative_guardrails.md`](reports/report_draft/narrative_guardrails.md) | Locked wording (task framing, tiers, smoke vs full) |
 
-**Evidence policy:** Smoke runs under `evidence/` validate pipeline wiring and joins. **Official performance claims** require full 2023–2025 execution on Drive; notebook `05` consolidates DQ and model CSVs into `reports/tables/` and `reports/figures/`. Until then, use `[PENDING]` placeholders — do not cite smoke model metrics as final findings.
+**Evidence policy:** Smoke runs under `evidence/smoke_2024_maxsessions2*/` validated pipeline wiring and joins. **Official performance claims** are based on the full 2023–2025 Colab execution and are consolidated under [`evidence/full_2023_2025/`](evidence/full_2023_2025/) — `reports/data_quality/`, `reports/model_results/`, `reports/tables/`, `reports/figures/`, and `artifacts/manifests/{ingestion_manifest,ingestion_manifest_effective,ingestion_retry_manifest,model_run_manifest,run_manifest}` collectively constitute the submission evidence bundle. Do not cite smoke model metrics as final findings.

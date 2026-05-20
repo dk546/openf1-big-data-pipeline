@@ -1,0 +1,4 @@
+split,season,n_rows,points_finish_pos,points_finish_neg,pos_rate
+train,2023,558,258,300,0.4624
+validation,2024,599,288,311,0.4808
+test,2025,599,288,311,0.4808
