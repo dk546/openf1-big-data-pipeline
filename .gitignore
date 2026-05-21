@@ -101,3 +101,15 @@ pip-wheel-metadata/
 
 # Optional: ignore very large figures (keep report CSVs and small PNGs)
 # reports/figures/*.html
+
+# Internal dev audit logs (Markdown only — keep code-emitted CSVs under artifacts/)
+artifacts/pipeline_logs/*.md
+
+# Internal report drafts and methodology (working documents — not public)
+reports/report_draft/
+
+# Evidence-freeze checklists (internal QA tooling)
+evidence/**/EVIDENCE_FREEZE_CHECKLIST.md
+
+# Cursor IDE local settings (defensive)
+.cursor/

@@ -141,7 +141,7 @@ After a successful **Colab** run:
 1. Verify all `reports/data_quality/silver_*.csv` files exist with numeric values.
 2. Verify `data/silver/*_clean.parquet` files exist.
 3. Confirm `session_result_clean.parquet` has rows (required for Gold target).
-4. Update `implementation_checklist.md` Section 6 — mark Colab run only after Colab execution.
+4. Commit Bronze/Silver evidence (manifests + DQ CSVs) after a successful Colab run.
 5. Next: `03_gold_feature_engineering.ipynb`.""")
 
 nb = {

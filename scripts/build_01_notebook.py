@@ -163,7 +163,7 @@ After a **successful Colab run**:
 1. Confirm `artifacts/manifests/ingestion_manifest.csv` exists.
 2. Confirm `session_result` has non-zero rows for full ingestion (or document gaps).
 3. Note `starting_grid` row counts (may be zero for some sessions — not a failure if API returned success).
-4. Update `implementation_checklist.md` — mark Colab smoke/full run only after Colab execution.
+4. Commit Bronze/Silver evidence (manifests + DQ CSVs) after a successful Colab run.
 5. Next: `02_silver_cleaning_quality.ipynb`.""")
 
 nb = {

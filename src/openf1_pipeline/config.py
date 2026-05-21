@@ -67,7 +67,7 @@ MARKER_FILES = ("README.md",)
 
 def get_project_root() -> Path:
     """
-    Resolve repository root for Colab or Cursor (source code, notebooks).
+    Resolve repository root for Colab or local development (source code, notebooks).
 
     Order: OPENF1_PROJECT_ROOT env → walk up from cwd for marker file → cwd.
     """

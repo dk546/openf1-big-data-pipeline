@@ -27,8 +27,6 @@ This project was developed in an **MBA Big Data Infrastructures** course. The wo
 3. **Feature Engineering & Integration**
 4. **Experimental Results & Analysis**
 
-See local project planning docs (if available in your clone) for full requirements and artifact lists.
-
 ---
 
 ## 4. Why this is a big data infrastructure project first
@@ -104,7 +102,7 @@ Behaviour:
 - Overwrites/creates only the corresponding `data/bronze/{endpoint}/year={year}/session_key={session_key}.jsonl` files on Drive.
 - The original `ingestion_manifest.csv` is preserved unchanged. Retry results are written to `artifacts/manifests/ingestion_retry_manifest.csv`.
 - After retry, the notebook **builds an effective post-retry manifest** at `artifacts/manifests/ingestion_manifest_effective.csv` (via `openf1_pipeline.ingestion.ingest.write_effective_manifest_after_retry(...)`), then regenerates `bronze_file_inventory.csv`, `bronze_row_counts.csv`, `bronze_schema_report.csv`, `bronze_schema_drift.csv`, the `artifacts/schemas/bronze_schema_report.csv` schema snapshot, the `bronze_manifest_file_reconciliation*.csv` reports **against the effective manifest**, and the `duckdb_bronze_*` validation CSVs so the on-disk Bronze evidence reflects the new files.
-- Programmatic API: `openf1_pipeline.ingestion.ingest.retry_failed_session_endpoints(...)` and `openf1_pipeline.ingestion.ingest.write_effective_manifest_after_retry(...)`. See `artifacts/pipeline_logs/full_bronze_retry_plan.md` for the retry workflow, `artifacts/pipeline_logs/bronze_manifest_file_reconciliation_added.md` for the reconciliation contract, and `artifacts/pipeline_logs/bronze_effective_manifest_post_retry.md` for the effective-manifest contract.
+- Programmatic API: `openf1_pipeline.ingestion.ingest.retry_failed_session_endpoints(...)` and `openf1_pipeline.ingestion.ingest.write_effective_manifest_after_retry(...)`.
 
 **Effective post-retry manifest.** `ingestion_manifest_effective.csv` is built by overlaying the retry manifest on the original manifest:
 
@@ -123,7 +121,7 @@ Reconciliation auto-detects this: if `ingestion_retry_manifest.csv` is present w
 
 | Role | Tool |
 |------|------|
-| Development | **Cursor** |
+| Development | **Google Colab / VS Code** |
 | Version control | **GitHub** |
 | Official execution | **Google Colab Pro Plus** |
 | Persistent outputs | **Google Drive** (`OPENF1_DATA_ROOT`) |
@@ -338,6 +336,8 @@ Confirm Gold mart row count matches Silver `session_result_clean` driver-session
 - Commit **code** and lightweight **CSV summaries** to GitHub when appropriate.
 - For written analysis or reporting, cite **Drive-generated outputs** from the full Colab run.
 
+**Final-run evidence:** see [`evidence/full_2023_2025/`](evidence/full_2023_2025/) for the consolidated Bronze, Silver, Gold, modeling, and report-artifact CSVs/PNGs produced by the official 2023–2025 Colab execution.
+
 ---
 
 ## 12. Repository structure
@@ -364,34 +364,3 @@ On Colab with Drive: outputs live under `/content/drive/MyDrive/openf1_big_data_
 - Dependencies are listed in `requirements.txt`.
 - Random seed: `42` (see `src/openf1_pipeline/config.py`).
 - Each run should update `artifacts/manifests/run_manifest.json` with git commit, seasons, row counts, and artifact paths.
-- Check items in `implementation_checklist.md` only after successful Colab execution.
-
----
-
-## 14. Current implementation status
-
-| Phase | Status |
-|-------|--------|
-| Project docs (`project_context`, `project_plan`, checklist) | Done |
-| Repository scaffold (folders, placeholders, README) | Done |
-| Bronze ingestion | **Done** — full 2023–2025 run + targeted retry; effective-manifest reconciliation passed (`evidence/full_2023_2025/`); 148,184 rows across required endpoints |
-| Silver cleaning & DQ reports | **Done** — full run; 148,184 rows preserved with 0 row loss; 0 rejected records; 0 referential-integrity unmatched |
-| Gold feature mart | **Done** — full run; 1,756 driver-race rows × 62 cols; 40 default numeric model features (8 Tier 1 + 32 Tier 2); leakage guard and feature dictionary committed |
-| Modeling & evaluation | **Done** — `MODELING_MODE="full"`, season splits 2023/2024/2025 (558/599/599); best model = Random Forest (test F1 = 0.7837, ROC-AUC = 0.8733, accuracy = 0.7963); `model_run_manifest.json` written |
-| Report artifacts & final manifest | **Done** — Notebook 05 wrote 11 report tables (`reports/tables/`) and 5 figures (`reports/figures/`); `artifacts/manifests/run_manifest.json` written; full evidence consolidated under `evidence/full_2023_2025/` |
-
-Final-run evidence: see [`evidence/full_2023_2025/`](evidence/full_2023_2025/). Track progress in `implementation_checklist.md`.
-
----
-
-## 15. Report structure and artifact traceability
-
-The final written deliverable structure is **locked** in [`reports/report_draft/report_structure.md`](reports/report_draft/report_structure.md).
-
-| Document | Purpose |
-|----------|---------|
-| [`report_artifact_map.md`](reports/report_draft/report_artifact_map.md) | Maps every report subsection to pipeline CSVs, notebooks, and paths |
-| [`table_figure_register.md`](reports/report_draft/table_figure_register.md) | Planned Tables 1–14 and Figures 1–8 with source artifacts |
-| [`narrative_guardrails.md`](reports/report_draft/narrative_guardrails.md) | Locked wording (task framing, tiers, smoke vs full) |
-
-**Evidence policy:** Smoke runs under `evidence/smoke_2024_maxsessions2*/` validated pipeline wiring and joins. **Official performance claims** are based on the full 2023–2025 Colab execution and are consolidated under [`evidence/full_2023_2025/`](evidence/full_2023_2025/) — `reports/data_quality/`, `reports/model_results/`, `reports/tables/`, `reports/figures/`, and `artifacts/manifests/{ingestion_manifest,ingestion_manifest_effective,ingestion_retry_manifest,model_run_manifest,run_manifest}` collectively constitute the submission evidence bundle. Do not cite smoke model metrics as final findings.

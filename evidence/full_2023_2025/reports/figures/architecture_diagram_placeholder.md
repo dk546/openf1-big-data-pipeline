@@ -64,4 +64,4 @@ Databricks is **out of scope**; PySpark runs locally inside Google Colab via `ge
 
 ## Replacement guidance
 
-When producing the final PDF, replace this file with a rendered PNG (e.g. `architecture_diagram.png`) and update the Figure 1 reference in [`reports/report_draft/table_figure_register.md`](../../../../reports/report_draft/table_figure_register.md) and [`reports/report_draft/report_structure.md`](../../../../reports/report_draft/report_structure.md) §3.1 accordingly. The Mermaid source above can be exported via the GitHub renderer or pasted into [https://mermaid.live](https://mermaid.live) for a quick PNG export.
+Replace this file with a rendered PNG (e.g. `architecture_diagram.png`) before producing the final PDF; the Mermaid source above can be exported via the GitHub renderer or [https://mermaid.live](https://mermaid.live).
