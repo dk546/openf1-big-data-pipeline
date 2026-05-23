@@ -8,6 +8,10 @@ version = "0.1.0"
 description = "Medallion architecture data pipeline for OpenF1 Formula 1 race performance classification"
 readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+]
 dependencies = []
 
 [tool.setuptools.packages.find]

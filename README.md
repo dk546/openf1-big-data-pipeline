@@ -14,8 +14,6 @@ A Medallion Architecture Data Pipeline for Formula 1 Race Performance Classifica
 
 This project builds an **evidence-driven, reproducible Big Data Infrastructure pipeline** for Formula 1 data from the [OpenF1 API](https://openf1.org/). The pipeline lands raw data (Bronze), cleans and audits it (Silver), integrates a driver-race feature mart (Gold), and uses simple classification models as the **final consumption layer** to validate that the Gold mart supports analysis.
 
-The written deliverable is supported by **generated tables, manifests, and quality reports**—not narrative claims alone.
-
 ---
 
 ## 3. Course context
@@ -31,13 +29,11 @@ This project was developed in an **MBA Big Data Infrastructures** course. The wo
 
 ## 4. Why this is a big data infrastructure project first
 
-The core deliverable is the **Medallion pipeline** (ingestion, cleaning, integration, provenance)—not model tuning. Supervised models exist to:
+The core deliverable is the **Medallion pipeline** (ingestion, cleaning, integration, provenance), not model tuning. Supervised models exist to:
 
 - Enforce a clear **Gold grain** (one row per driver per race session)
 - Expose integration and data-quality issues through measurable outputs
 - Satisfy the experimental analysis pillar with baselines and season-based evaluation
-
-Do **not** treat this as a Kaggle-style classification competition.
 
 ---
 
@@ -55,7 +51,7 @@ Do **not** treat this as a Kaggle-style classification competition.
 
 ## Bronze layer evidence
 
-Bronze ingestion (`01_ingestion_bronze.ipynb`) should be executed in **Google Colab Pro Plus** for reproducible, documented pipeline evidence. A local smoke test is for development only.
+Bronze ingestion (`01_ingestion_bronze.ipynb`) should be executed in **Google Colab** for reproducible, documented pipeline evidence. A local smoke test is for development only.
 
 **Artifacts produced:**
 
@@ -71,7 +67,7 @@ Bronze ingestion (`01_ingestion_bronze.ipynb`) should be executed in **Google Co
 | Manifest ↔ files reconciliation | `reports/data_quality/bronze_manifest_file_reconciliation.csv` |
 | Reconciliation summary | `reports/data_quality/bronze_manifest_file_reconciliation_summary.csv` |
 
-`bronze_manifest_file_reconciliation.csv` joins `ingestion_manifest.csv` to the JSONL inventory on disk and classifies every `(endpoint, year, session_key)` triple into `matched`, `row_count_mismatch`, `manifest_success_missing_file`, `failed_manifest_file_exists`, `stale_file_not_in_success_manifest`, `optional_missing`, or `manifest_failed_no_file`. It is used to verify that the manifest and the physical Bronze files agree **before** Silver processing — notably to detect stale files left behind when `CLEAR_BRONZE_OUTPUTS=False` was used over a non-empty Drive root.
+`bronze_manifest_file_reconciliation.csv` joins `ingestion_manifest.csv` to the JSONL inventory on disk and classifies every `(endpoint, year, session_key)` triple into `matched`, `row_count_mismatch`, `manifest_success_missing_file`, `failed_manifest_file_exists`, `stale_file_not_in_success_manifest`, `optional_missing`, or `manifest_failed_no_file`. It is used to verify that the manifest and the physical Bronze files agree **before** Silver processing, notably to detect stale files left behind when `CLEAR_BRONZE_OUTPUTS=False` was used over a non-empty Drive root.
 
 Raw payloads: `data/bronze/{endpoint}/…/*.jsonl` (typically on Google Drive via `OPENF1_DATA_ROOT`).
 
@@ -123,12 +119,10 @@ Reconciliation auto-detects this: if `ingestion_retry_manifest.csv` is present w
 |------|------|
 | Development | **Google Colab / VS Code** |
 | Version control | **GitHub** |
-| Official execution | **Google Colab Pro Plus** |
+| Official execution | **Google Colab** |
 | Persistent outputs | **Google Drive** (`OPENF1_DATA_ROOT`) |
 
 **No local execution is required** for full pipeline evidence. Paths assume a cloned repo in Colab; bulk `data/` lives on Drive (see `notebooks/00_colab_setup.ipynb` and the setup cell in each pipeline notebook).
-
-**Databricks is not required** and is out of scope for this project.
 
 ---
 
@@ -144,7 +138,6 @@ This is a **big data infrastructure** project first; ML consumes validated Gold 
 | **pandas** | Small audit CSV exports, notebook display, ML handoff (not the primary ETL engine) |
 | **scikit-learn / LightGBM** | Modeling (notebook 04) |
 
-**Databricks is not required** and is not used. PySpark runs locally in Colab (`get_spark()`).
 
 ### Execution flow
 
@@ -173,11 +166,11 @@ OpenF1 API → Bronze (raw) → Silver (cleaned) → Gold (feature mart) → Mod
 
 ---
 
-## 9. ML strategy (locked before modeling)
+## 9. ML strategy
 
 **Question:** Can we predict whether a driver finishes in the points?
 
-**Task framing:** **Points-finish classification using integrated race-session features** — not strict pre-race prediction. The default model uses **Tier 1** early-session features (e.g. first-five-lap pace, early position) and **Tier 2** full-session analytical features (e.g. lap aggregates, pit stops, race-control counts, weather means).
+**Task framing:** **Points-finish classification using integrated race-session features**, not strict pre-race prediction. The default model uses **Tier 1** early-session features (e.g. first-five-lap pace, early position) and **Tier 2** full-session analytical features (e.g. lap aggregates, pit stops, race-control counts, weather means).
 
 | Field | Definition |
 |-------|------------|
@@ -195,7 +188,7 @@ OpenF1 API → Bronze (raw) → Silver (cleaned) → Gold (feature mart) → Mod
 
 Set `MODELING_MODE = "smoke"` for wiring verification; use `"full"` for official season splits after a full 2023–2025 Gold run.
 
-No deep learning. Feature engineering and leakage control are completed in Gold **before** modeling.
+Feature engineering and leakage control are completed in Gold **before** modeling.
 
 ### Season splits (primary)
 
@@ -205,7 +198,7 @@ No deep learning. Feature engineering and leakage control are completed in Gold 
 | Validation | 2024 |
 | Test | 2025 |
 
-Use **season-based** splits only — not a random row-level split (avoids leaking race/session structure). Fallback if needed: train 2023–early 2024, validation late 2024, test 2025 (document in manifest).
+Use **season-based** splits only, not a random row-level split (avoids leaking race/session structure). Fallback if needed: train 2023–early 2024, validation late 2024, test 2025 (document in manifest).
 
 ---
 
@@ -230,13 +223,13 @@ Design Gold and review leakage reports **before** running notebook `04`.
 
 ---
 
-## 11. Google Colab execution (official)
+## 11. Google Colab execution
 
 **Repository:** https://github.com/dk546/openf1-big-data-pipeline
 
 ### Why each notebook has its own setup cell
 
-Colab **notebook tabs do not share runtime state**. Opening `01` or `02` in a new tab starts a fresh kernel — variables, mounts, and `sys.path` from `00` are **not** available. Every execution notebook (`00`, `01`, `02`, …) therefore includes the **same standard setup cell** at the top.
+Colab **notebook tabs do not share runtime state**. Opening `01` or `02` in a new tab starts a fresh kernel, variables, mounts, and `sys.path` from `00` are **not** available. Every execution notebook (`00`, `01`, `02`, …) therefore includes the **same standard setup cell** at the top.
 
 ### Recommended persistence setup
 
@@ -273,7 +266,7 @@ Set `USE_GOOGLE_DRIVE=True` in each notebook. The setup cell will:
 
 ### Drive output cleanup policy (idempotent reruns)
 
-Notebooks are safe to rerun on Google Drive when cleanup flags are set. Each notebook cleans **only its layer** — upstream data is preserved by default.
+Notebooks are safe to rerun on Google Drive when cleanup flags are set. Each notebook cleans **only its layer**, upstream data is preserved by default.
 
 | Notebook | Flag | Default | Cleans | Does not delete |
 |----------|------|---------|--------|-----------------|
@@ -334,7 +327,6 @@ Confirm Gold mart row count matches Silver `session_result_clean` driver-session
 
 - Bulk `data/` stays on **Drive** (gitignored).
 - Commit **code** and lightweight **CSV summaries** to GitHub when appropriate.
-- For written analysis or reporting, cite **Drive-generated outputs** from the full Colab run.
 
 **Final-run evidence:** see [`evidence/full_2023_2025/`](evidence/full_2023_2025/) for the consolidated Bronze, Silver, Gold, modeling, and report-artifact CSVs/PNGs produced by the official 2023–2025 Colab execution.
 
@@ -364,3 +356,11 @@ On Colab with Drive: outputs live under `/content/drive/MyDrive/openf1_big_data_
 - Dependencies are listed in `requirements.txt`.
 - Random seed: `42` (see `src/openf1_pipeline/config.py`).
 - Each run should update `artifacts/manifests/run_manifest.json` with git commit, seasons, row counts, and artifact paths.
+
+---
+
+## 14. License
+
+Released under the [MIT License](LICENSE).
+
+OpenF1 data is fetched live from [https://api.openf1.org](https://api.openf1.org); refer to the OpenF1 project for its own terms.
